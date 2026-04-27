@@ -1,0 +1,6 @@
+{
+  "type": "string",
+  "description": "SQL insert statement for events table",
+  "minLength": 1,
+  "pattern": "^INSERT\\s+INTO\\s+events\\s*\\(\\s*order\\s*,\\s*year\\s*,\\s*event\\s*,\\s*description\\s*\\)\\s+VALUES\\s*(.|\\r|\\n)*;\\s*$"
+}

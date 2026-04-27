@@ -1,0 +1,7 @@
+{
+  "versions": ["rv60", "ntv"],
+  "fromSequence": 26,
+  "toSequence": 31,
+  "manifestId": "lectura-expandida-rv60",
+  "limit": 100
+}

@@ -1,0 +1,25 @@
+{
+  "$comment": "Query parameters of GET /api/bible/verses. Expressed as a JSON object for schema reuse; the HTTP client serializes to querystring.",
+  "type": "object",
+  "required": ["versions"],
+  "properties": {
+    "versions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "fromRef": { "type": "string", "minLength": 1 },
+    "toRef": { "type": "string", "minLength": 1 },
+    "fromSequence": { "type": "integer", "minimum": 1 },
+    "toSequence": { "type": "integer", "minimum": 1 },
+    "manifestId": { "type": "string", "minLength": 1 },
+    "limit": { "type": "integer", "minimum": 1, "maximum": 1000 }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "$comment": "Either (fromRef+toRef) OR (fromSequence+toSequence) must be provided, not both."
+    }
+  ]
+}

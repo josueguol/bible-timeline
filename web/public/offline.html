@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Sin conexión — Bible Timeline</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%; background: #0f172a; color: #e2e8f0;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .card {
+      text-align: center; padding: 32px 24px; max-width: 320px;
+    }
+    .icon { font-size: 48px; margin-bottom: 16px; }
+    h1 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    p  { font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 24px; }
+    button {
+      padding: 10px 24px; border-radius: 8px; border: none;
+      background: #f59e0b; color: #0f172a; font-size: 14px;
+      font-weight: 600; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📖</div>
+    <h1>Sin conexión</h1>
+    <p>No se pudo conectar al servidor. Verifica tu conexión e intenta de nuevo.</p>
+    <button onclick="location.reload()">Reintentar</button>
+  </div>
+</body>
+</html>

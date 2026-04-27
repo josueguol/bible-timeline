@@ -1,0 +1,23 @@
+{
+  "versions": [
+    {
+      "versionId": "rv60",
+      "code": "RV60",
+      "title": "Reina-Valera 1960",
+      "language": "es",
+      "languageFamily": "es",
+      "isPrimary": true,
+      "verseCount": 31102,
+      "sourcePath": "resources/biblias/RV60.xml"
+    },
+    {
+      "versionId": "ntv",
+      "code": "NTV",
+      "title": "Nueva Traducción Viviente",
+      "language": "es",
+      "languageFamily": "es",
+      "isPrimary": false,
+      "sourcePath": "resources/biblias/NTV.xml"
+    }
+  ]
+}

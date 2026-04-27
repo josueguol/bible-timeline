@@ -1,0 +1,37 @@
+{
+  "$comment": "Shape of GET /api/search. Returns categorized suggestions.",
+  "type": "object",
+  "required": ["query", "results"],
+  "properties": {
+    "query": { "type": "string", "minLength": 1 },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["category", "label", "focus"],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": ["reference", "event", "text"]
+          },
+          "label": { "type": "string", "minLength": 1 },
+          "description": { "type": "string" },
+          "focus": {
+            "type": "object",
+            "properties": {
+              "focusRef": { "type": "string", "minLength": 1 },
+              "focusSequence": { "type": "integer", "minimum": 1 },
+              "focusEventId": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false,
+            "$comment": "At least one of focusRef, focusSequence, focusEventId must be set."
+          },
+          "score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "preview": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

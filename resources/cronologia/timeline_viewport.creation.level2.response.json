@@ -1,0 +1,525 @@
+{
+  "timelineId": "bible-history-hierarchy-seed",
+  "zoomLevel": {
+    "level": 2,
+    "label": "Narrativas",
+    "minZoomFactor": 0.28,
+    "maxZoomFactor": 0.5,
+    "targetVisibleEvents": 56,
+    "description": "Subeventos narrativos dentro del foco actual sin perder el contexto cercano."
+  },
+  "focus": {
+    "requestedFocusSequence": null,
+    "requestedFocusRef": "Génesis 1:26",
+    "requestedFocusEventId": null,
+    "resolvedFocusSequence": 26,
+    "resolvedFocusRef": "Génesis 1:26",
+    "focusedEventId": "creation-day-6-humanity",
+    "focusPath": [
+      "creation",
+      "creation-day-6",
+      "creation-day-6-humanity"
+    ]
+  },
+  "visibleEvents": [
+    {
+      "id": "creation",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 1,
+      "title": "Creación",
+      "summary": "Dios crea los cielos, la tierra y establece el orden de la creación.",
+      "startRef": "Génesis 1:1",
+      "endRef": "Génesis 2:3",
+      "startSequence": 1,
+      "endSequence": 34,
+      "importance": 100,
+      "canonical": true,
+      "state": "expanded",
+      "isFocused": false,
+      "isFocusAncestor": true,
+      "path": [
+        "creation"
+      ],
+      "displayOrder": 1
+    },
+    {
+      "id": "creation-day-1",
+      "parentId": "creation",
+      "zoomLevel": 1,
+      "sequence": 1,
+      "title": "Día 1",
+      "summary": "Separación entre la luz y las tinieblas.",
+      "startRef": "Génesis 1:3",
+      "endRef": "Génesis 1:5",
+      "startSequence": 3,
+      "endSequence": 5,
+      "importance": 100,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "creation",
+        "creation-day-1"
+      ],
+      "displayOrder": 2
+    },
+    {
+      "id": "creation-day-2",
+      "parentId": "creation",
+      "zoomLevel": 1,
+      "sequence": 2,
+      "title": "Día 2",
+      "summary": "Separación de las aguas y formación de la expansión.",
+      "startRef": "Génesis 1:6",
+      "endRef": "Génesis 1:8",
+      "startSequence": 6,
+      "endSequence": 8,
+      "importance": 99,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "creation",
+        "creation-day-2"
+      ],
+      "displayOrder": 3
+    },
+    {
+      "id": "creation-day-3",
+      "parentId": "creation",
+      "zoomLevel": 1,
+      "sequence": 3,
+      "title": "Día 3",
+      "summary": "Aparecen lo seco, los mares y la vegetación.",
+      "startRef": "Génesis 1:9",
+      "endRef": "Génesis 1:13",
+      "startSequence": 9,
+      "endSequence": 13,
+      "importance": 98,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "creation",
+        "creation-day-3"
+      ],
+      "displayOrder": 4
+    },
+    {
+      "id": "creation-day-4",
+      "parentId": "creation",
+      "zoomLevel": 1,
+      "sequence": 4,
+      "title": "Día 4",
+      "summary": "Dios pone lumbreras para días, años y estaciones.",
+      "startRef": "Génesis 1:14",
+      "endRef": "Génesis 1:19",
+      "startSequence": 14,
+      "endSequence": 19,
+      "importance": 97,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "creation",
+        "creation-day-4"
+      ],
+      "displayOrder": 5
+    },
+    {
+      "id": "creation-day-5",
+      "parentId": "creation",
+      "zoomLevel": 1,
+      "sequence": 5,
+      "title": "Día 5",
+      "summary": "Creación de peces y aves.",
+      "startRef": "Génesis 1:20",
+      "endRef": "Génesis 1:23",
+      "startSequence": 20,
+      "endSequence": 23,
+      "importance": 96,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "creation",
+        "creation-day-5"
+      ],
+      "displayOrder": 6
+    },
+    {
+      "id": "creation-day-6",
+      "parentId": "creation",
+      "zoomLevel": 1,
+      "sequence": 6,
+      "title": "Día 6",
+      "summary": "Creación de animales terrestres y de la humanidad.",
+      "startRef": "Génesis 1:24",
+      "endRef": "Génesis 1:31",
+      "startSequence": 24,
+      "endSequence": 31,
+      "importance": 100,
+      "canonical": true,
+      "state": "expanded",
+      "isFocused": false,
+      "isFocusAncestor": true,
+      "path": [
+        "creation",
+        "creation-day-6"
+      ],
+      "displayOrder": 7
+    },
+    {
+      "id": "creation-day-6-land-animals",
+      "parentId": "creation-day-6",
+      "zoomLevel": 2,
+      "sequence": 1,
+      "title": "Animales terrestres",
+      "summary": "La tierra produce seres vivientes según su género.",
+      "startRef": "Génesis 1:24",
+      "endRef": "Génesis 1:25",
+      "startSequence": 24,
+      "endSequence": 25,
+      "importance": 95,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "creation",
+        "creation-day-6",
+        "creation-day-6-land-animals"
+      ],
+      "displayOrder": 8
+    },
+    {
+      "id": "creation-day-6-humanity",
+      "parentId": "creation-day-6",
+      "zoomLevel": 2,
+      "sequence": 2,
+      "title": "Humanidad",
+      "summary": "Dios crea al hombre y a la mujer a su imagen y les entrega la comisión cultural.",
+      "startRef": "Génesis 1:26",
+      "endRef": "Génesis 1:31",
+      "startSequence": 26,
+      "endSequence": 31,
+      "importance": 100,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": true,
+      "isFocusAncestor": false,
+      "path": [
+        "creation",
+        "creation-day-6",
+        "creation-day-6-humanity"
+      ],
+      "displayOrder": 9
+    },
+    {
+      "id": "creation-day-7",
+      "parentId": "creation",
+      "zoomLevel": 1,
+      "sequence": 7,
+      "title": "Día 7",
+      "summary": "Dios descansa, bendice y santifica el séptimo día.",
+      "startRef": "Génesis 2:1",
+      "endRef": "Génesis 2:3",
+      "startSequence": 32,
+      "endSequence": 34,
+      "importance": 100,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "creation",
+        "creation-day-7"
+      ],
+      "displayOrder": 10
+    },
+    {
+      "id": "fall-and-primeval-world",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 2,
+      "title": "Caída y Mundo Primigenio",
+      "summary": "Edén, caída, expansión del pecado, diluvio y dispersión de Babel.",
+      "startRef": "Génesis 2:4",
+      "endRef": "Génesis 11:32",
+      "startSequence": 35,
+      "endSequence": 299,
+      "importance": 99,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "fall-and-primeval-world"
+      ],
+      "displayOrder": 11
+    },
+    {
+      "id": "patriarchs",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 3,
+      "title": "Patriarcas",
+      "summary": "Era patriarcal: Job, Abraham, Isaac, Jacob y José bajo la promesa del pacto.",
+      "startRef": "Job 1:1",
+      "endRef": "Génesis 50:26",
+      "startSequence": 300,
+      "endSequence": 2603,
+      "importance": 98,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "patriarchs"
+      ],
+      "displayOrder": 12
+    },
+    {
+      "id": "exodus-covenant-wilderness",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 4,
+      "title": "Éxodo, Pacto y Desierto",
+      "summary": "Liberación de Egipto, pacto, peregrinación y palabras finales de Moisés.",
+      "startRef": "Éxodo 1:1",
+      "endRef": "Salmos 91:16",
+      "startSequence": 2604,
+      "endSequence": 6955,
+      "importance": 100,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "exodus-covenant-wilderness"
+      ],
+      "displayOrder": 13
+    },
+    {
+      "id": "conquest-and-judges",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 5,
+      "title": "Conquista y Jueces",
+      "summary": "Entrada a la tierra prometida, ciclos de jueces y fidelidad de Dios en Rut.",
+      "startRef": "Josué 1:1",
+      "endRef": "Rut 4:22",
+      "startSequence": 6956,
+      "endSequence": 8316,
+      "importance": 95,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "conquest-and-judges"
+      ],
+      "displayOrder": 14
+    },
+    {
+      "id": "united-monarchy",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 6,
+      "title": "Monarquía Unida",
+      "summary": "Samuel, Saúl, David y Salomón; reino unido, templo y literatura sapiencial.",
+      "startRef": "1 Samuel 1:1",
+      "endRef": "Proverbios 31:31",
+      "startSequence": 8317,
+      "endSequence": 14926,
+      "importance": 97,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "united-monarchy"
+      ],
+      "displayOrder": 15
+    },
+    {
+      "id": "divided-kingdom",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 7,
+      "title": "Reino Dividido",
+      "summary": "Israel y Judá divididos, ministerio de Elías y Eliseo y primeros grandes oráculos proféticos.",
+      "startRef": "1 Reyes 12:1",
+      "endRef": "Isaías 27:13",
+      "startSequence": 14927,
+      "endSequence": 17051,
+      "importance": 96,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "divided-kingdom"
+      ],
+      "displayOrder": 16
+    },
+    {
+      "id": "judah-to-exile",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 8,
+      "title": "Judá hasta el Exilio",
+      "summary": "Últimos días de Judá, caída de Jerusalén, exilio y esperanza profética en Babilonia.",
+      "startRef": "2 Reyes 18:1",
+      "endRef": "Daniel 12:13",
+      "startSequence": 17052,
+      "endSequence": 21973,
+      "importance": 97,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "judah-to-exile"
+      ],
+      "displayOrder": 17
+    },
+    {
+      "id": "return-and-restoration",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 9,
+      "title": "Retorno y Restauración",
+      "summary": "Regreso del exilio, reconstrucción y restauración postexílica.",
+      "startRef": "Esdras 1:1",
+      "endRef": "Malaquías 4:6",
+      "startSequence": 21974,
+      "endSequence": 23145,
+      "importance": 94,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "return-and-restoration"
+      ],
+      "displayOrder": 18
+    },
+    {
+      "id": "messiah-birth-and-preparation",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 10,
+      "title": "Nacimiento y Preparación del Mesías",
+      "summary": "Anuncios, nacimiento, crecimiento de Jesús y preparación inmediata para su ministerio.",
+      "startRef": "Lucas 1:1",
+      "endRef": "Lucas 4:13",
+      "startSequence": 23146,
+      "endSequence": 23514,
+      "importance": 98,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "messiah-birth-and-preparation"
+      ],
+      "displayOrder": 19
+    },
+    {
+      "id": "jesus-ministry",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 11,
+      "title": "Ministerio de Jesús",
+      "summary": "Predicación, señales, discipulado y ministerio público de Jesús.",
+      "startRef": "Lucas 4:14",
+      "endRef": "Mateo 20:34",
+      "startSequence": 23515,
+      "endSequence": 25626,
+      "importance": 100,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "jesus-ministry"
+      ],
+      "displayOrder": 20
+    },
+    {
+      "id": "passion-and-resurrection",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 12,
+      "title": "Pasión y Resurrección",
+      "summary": "Entrada en Jerusalén, cruz, resurrección y apariciones del Cristo resucitado.",
+      "startRef": "Mateo 21:1",
+      "endRef": "Juan 21:25",
+      "startSequence": 25627,
+      "endSequence": 26924,
+      "importance": 100,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "passion-and-resurrection"
+      ],
+      "displayOrder": 21
+    },
+    {
+      "id": "church-and-mission",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 13,
+      "title": "Iglesia y Misión",
+      "summary": "Pentecostés, expansión misionera y enseñanza apostólica a la iglesia del Nuevo Testamento.",
+      "startRef": "Hechos 1:1",
+      "endRef": "3 Juan 1:14",
+      "startSequence": 26925,
+      "endSequence": 30698,
+      "importance": 99,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "church-and-mission"
+      ],
+      "displayOrder": 22
+    },
+    {
+      "id": "revelation-and-new-creation",
+      "parentId": null,
+      "zoomLevel": 0,
+      "sequence": 14,
+      "title": "Revelación y Nueva Creación",
+      "summary": "Visión apocalíptica, juicio final, victoria del Cordero y nueva creación.",
+      "startRef": "Apocalipsis 1:1",
+      "endRef": "Apocalipsis 22:21",
+      "startSequence": 30699,
+      "endSequence": 31102,
+      "importance": 100,
+      "canonical": true,
+      "state": "collapsed",
+      "isFocused": false,
+      "isFocusAncestor": false,
+      "path": [
+        "revelation-and-new-creation"
+      ],
+      "displayOrder": 23
+    }
+  ],
+  "stats": {
+    "visibleCount": 23,
+    "targetVisibleEvents": 56,
+    "viewportEventBudget": 56
+  }
+}

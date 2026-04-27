@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "required": ["timelineId", "zoomFactor"],
+  "properties": {
+    "timelineId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "zoomFactor": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "focusSequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "focusRef": {
+      "type": "string",
+      "minLength": 1
+    },
+    "focusEventId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "viewportEventBudget": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "includeAncestors": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

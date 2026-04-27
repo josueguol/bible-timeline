@@ -1,0 +1,6 @@
+{
+  "type": "string",
+  "description": "SQL insert bundle for Bible versions, chapter manifest, verse order, zoom hierarchy, and event sources",
+  "minLength": 1,
+  "pattern": "(?s)^.*INSERT\\s+INTO\\s+bible_versions\\s*\\(.*\\)\\s+VALUES\\s*.*;\\s*INSERT\\s+INTO\\s+bible_verses\\s*\\(.*\\)\\s+VALUES\\s*.*;\\s*INSERT\\s+INTO\\s+timeline_manifests\\s*\\(.*\\)\\s+VALUES\\s*.*;\\s*INSERT\\s+INTO\\s+timeline_chapter_entries\\s*\\(.*\\)\\s+VALUES\\s*.*;\\s*INSERT\\s+INTO\\s+timeline_verse_order\\s*\\(.*\\)\\s+VALUES\\s*.*;\\s*INSERT\\s+INTO\\s+timelines\\s*\\(.*\\)\\s+VALUES\\s*.*;\\s*INSERT\\s+INTO\\s+timeline_zoom_levels\\s*\\(.*\\)\\s+VALUES\\s*.*;\\s*INSERT\\s+INTO\\s+timeline_events\\s*\\(.*\\)\\s+VALUES\\s*.*;\\s*INSERT\\s+INTO\\s+timeline_event_sources\\s*\\(.*\\)\\s+VALUES\\s*.*;\\s*$"
+}

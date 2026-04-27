@@ -1,0 +1,94 @@
+{
+  "$comment": "Shape of GET /api/timelines/{id}/events/{eventId}. Returns a single event with its sources, children summary, and verse range.",
+  "type": "object",
+  "required": [
+    "timelineId",
+    "event",
+    "ancestors",
+    "childrenSummary"
+  ],
+  "properties": {
+    "timelineId": { "type": "string", "minLength": 1 },
+    "event": {
+      "type": "object",
+      "required": [
+        "id",
+        "parentId",
+        "zoomLevel",
+        "sequence",
+        "title",
+        "startLabel",
+        "endLabel",
+        "startRef",
+        "endRef",
+        "startSequence",
+        "endSequence",
+        "summary",
+        "importance",
+        "canonical"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "parentId": { "type": ["string", "null"] },
+        "zoomLevel": { "type": "integer", "minimum": 0 },
+        "sequence": { "type": "integer", "minimum": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "startLabel": { "type": "string", "minLength": 1 },
+        "endLabel": { "type": "string", "minLength": 1 },
+        "startRef": { "type": "string", "minLength": 1 },
+        "endRef": { "type": "string", "minLength": 1 },
+        "startSequence": { "type": "integer", "minimum": 1 },
+        "endSequence": { "type": "integer", "minimum": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "importance": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "canonical": { "type": "boolean" },
+        "scriptureRefs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["sourceRef", "sourceType"],
+            "properties": {
+              "sourceRef": { "type": "string", "minLength": 1 },
+              "sourceType": {
+                "type": "string",
+                "enum": ["scripture", "historical-note"]
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ancestors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "zoomLevel"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "zoomLevel": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "childrenSummary": {
+      "type": "object",
+      "required": ["total", "byZoomLevel"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "byZoomLevel": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

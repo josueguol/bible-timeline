@@ -1,0 +1,28 @@
+{
+  "query": "Génesis 1:26",
+  "results": [
+    {
+      "category": "reference",
+      "label": "Génesis 1:26",
+      "description": "Referencia bíblica exacta",
+      "focus": { "focusRef": "Génesis 1:26" },
+      "score": 1.0
+    },
+    {
+      "category": "event",
+      "label": "Humanidad",
+      "description": "Día 6 — creación del hombre",
+      "focus": { "focusEventId": "creation-day-6-humanity" },
+      "score": 0.85,
+      "preview": "Dios crea al hombre a su imagen..."
+    },
+    {
+      "category": "text",
+      "label": "Génesis 1:26 (RV60)",
+      "description": "Entonces dijo Dios: Hagamos al hombre...",
+      "focus": { "focusSequence": 26 },
+      "score": 0.62,
+      "preview": "...Hagamos al hombre a nuestra imagen..."
+    }
+  ]
+}

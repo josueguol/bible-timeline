@@ -1,0 +1,31 @@
+{
+  "timelineId": "bible-history-hierarchy-seed",
+  "event": {
+    "id": "creation-day-6-humanity",
+    "parentId": "creation-day-6",
+    "zoomLevel": 2,
+    "sequence": 2,
+    "title": "Creación del hombre",
+    "startLabel": "Génesis 1",
+    "endLabel": "Génesis 1",
+    "startRef": "Génesis 1:26",
+    "endRef": "Génesis 1:31",
+    "startSequence": 26,
+    "endSequence": 31,
+    "summary": "Dios crea al hombre a su imagen y le encomienda el dominio sobre la creación.",
+    "importance": 100,
+    "canonical": true,
+    "scriptureRefs": ["Génesis 1:26-31"],
+    "sources": [
+      { "sourceRef": "Génesis 1:26-31", "sourceType": "scripture" }
+    ]
+  },
+  "ancestors": [
+    { "id": "creation", "title": "Creación", "zoomLevel": 0 },
+    { "id": "creation-day-6", "title": "Día 6", "zoomLevel": 1 }
+  ],
+  "childrenSummary": {
+    "total": 0,
+    "byZoomLevel": {}
+  }
+}

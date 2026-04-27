@@ -1,0 +1,181 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Design tokens — single source of truth for colors, spacing, typography,
+   radii, shadows, motion. Theme values are written to :root by theme.ts
+   when the active theme changes (--color-*). Non-themed tokens live here.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Typography ───────────────────────────────────────────────────────── */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --text-2xs: 0.6875rem;   /* 11px */
+  --text-xs: 0.75rem;      /* 12px */
+  --text-sm: 0.8125rem;    /* 13px */
+  --text-base: 0.875rem;   /* 14px */
+  --text-md: 1rem;         /* 16px */
+  --text-lg: 1.125rem;     /* 18px */
+  --text-xl: 1.25rem;      /* 20px */
+  --text-2xl: 1.5rem;      /* 24px */
+
+  --leading-tight: 1.25;
+  --leading-snug: 1.4;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.6;
+
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+  --tracking-wider: 0.08em;
+  --tracking-widest: 0.14em;
+
+  /* ── Spacing (4px base) ───────────────────────────────────────────────── */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ── Radii ────────────────────────────────────────────────────────────── */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-pill: 999px;
+
+  /* ── Elevation ────────────────────────────────────────────────────────── */
+  --shadow-sm: 0 2px 8px oklch(0 0 0 / 0.35);
+  --shadow-md: 0 6px 20px oklch(0 0 0 / 0.35);
+  --shadow-lg: 0 12px 32px oklch(0 0 0 / 0.35);
+  --shadow-xl: 0 18px 44px oklch(0 0 0 / 0.55);
+
+  /* ── Layout ───────────────────────────────────────────────────────────── */
+  --sidebar-rail: 52px;
+  --sidebar-open: 320px;
+  --era-band-h: 32px;
+  --topbar-h: 64px;
+  --card-h-compact: 96px;
+  --card-h-regular: 120px;
+  --card-h-comfy: 144px;
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 120ms;
+  --duration-normal: 180ms;
+  --duration-slow: 280ms;
+
+  /* ── Z-index scale ────────────────────────────────────────────────────── */
+  --z-canvas: 0;
+  --z-era-band: 5;
+  --z-ads: 8;           /* below float-cards / event-cards; minimap/FAB sit above */
+  --z-float-cards: 9;
+  --z-cards: 10;
+  --z-minimap: 22;
+  --z-topbar: 25;
+  --z-search: 30;
+  --z-sidebar: 35;
+  --z-sheet: 40;
+  --z-palette: 50;
+
+  /* ── Semantic theme colors — overwritten at runtime by theme.ts ──────── */
+  --color-bg: oklch(0.16 0.015 260);
+  --color-bg-deep: oklch(0.12 0.015 260);
+  --color-surface: oklch(0.22 0.018 260);
+  --color-surface-2: oklch(0.28 0.02 260);
+  --color-border: oklch(0.35 0.02 260 / 0.5);
+  --color-text: oklch(0.94 0.01 90);
+  --color-text-dim: oklch(0.68 0.015 260);
+  --color-text-mute: oklch(0.50 0.015 260);
+  --color-accent: oklch(0.78 0.14 85);
+  --color-accent-2: oklch(0.70 0.18 300);
+  --color-accent-3: oklch(0.72 0.13 195);
+  --color-axis: oklch(0.45 0.03 260);
+}
+
+/* ── Global resets layered on top of the inline ones from index.html ───── */
+
+html,
+body {
+  /* Kill the browser's swipe-back / swipe-forward gesture. Horizontal
+     trackpad swipes that reach the document edge are otherwise captured by
+     the browser (history navigation on macOS Safari/Chrome, "go back" on
+     Chrome for Windows). With overscroll-behavior: none the browser treats
+     the swipe as consumed and the gesture reaches our wheel handler
+     instead, which pans the timeline.
+
+     `none` also blocks pull-to-refresh on mobile, which we don't want
+     either — the timeline is the entire viewport. */
+  overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: none;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+/* Scrollable surfaces (card bodies, sidebar panel, search dropdown, event
+   modal sheet) contain their own scroll so reaching their edge doesn't
+   chain up to the document and trigger navigation either. */
+[data-scroll-host] {
+  overscroll-behavior: contain;
+}
+
+button, input, select {
+  font-family: inherit;
+  color: inherit;
+}
+
+button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Honor prefers-reduced-motion across the app */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Skeleton verse-card shimmer */
+@keyframes sk-shimmer {
+  0%   { background-position: -260px 0; }
+  100% { background-position: 260px 0; }
+}
+
+/* Tight native scrollbars inside verse card bodies */
+.vc-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(1 0 0 / 0.14) transparent;
+}
+.vc-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.vc-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.vc-scroll::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 0.14);
+  border-radius: 3px;
+}
+.vc-scroll::-webkit-scrollbar-thumb:hover {
+  background: oklch(1 0 0 / 0.25);
+}

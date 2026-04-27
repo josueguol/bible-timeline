@@ -1,0 +1,45 @@
+{
+  "manifestId": "lectura-expandida-rv60",
+  "versions": ["rv60", "ntv"],
+  "range": {
+    "fromSequence": 26,
+    "toSequence": 28,
+    "fromRef": "Génesis 1:26",
+    "toRef": "Génesis 1:28"
+  },
+  "rows": [
+    {
+      "sequence": 26,
+      "ref": "Génesis 1:26",
+      "book": "Génesis",
+      "chapter": 1,
+      "verse": 26,
+      "texts": {
+        "rv60": "Entonces dijo Dios: Hagamos al hombre a nuestra imagen...",
+        "ntv": "Entonces Dios dijo: Hagamos a los seres humanos a nuestra imagen..."
+      }
+    },
+    {
+      "sequence": 27,
+      "ref": "Génesis 1:27",
+      "book": "Génesis",
+      "chapter": 1,
+      "verse": 27,
+      "texts": {
+        "rv60": "Y creó Dios al hombre a su imagen...",
+        "ntv": "Así que Dios creó a los seres humanos a su propia imagen..."
+      }
+    },
+    {
+      "sequence": 28,
+      "ref": "Génesis 1:28",
+      "book": "Génesis",
+      "chapter": 1,
+      "verse": 28,
+      "texts": {
+        "rv60": "Y los bendijo Dios...",
+        "ntv": "Entonces Dios los bendijo..."
+      }
+    }
+  ]
+}

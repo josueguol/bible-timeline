@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="description" content="Bible Timeline — navegación visual de Génesis a Apocalipsis" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <title>Bible Timeline</title>
+    <!-- Google AdSense — auto-ads active; manual units in ads.ts -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6627084457734509" crossorigin="anonymous"></script>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 100%; height: 100%; overflow: hidden;
+        background: oklch(0.16 0.015 260);
+        color: oklch(0.94 0.01 90);
+        font-family: Inter, system-ui, -apple-system, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+        /* Prevent the browser from hijacking horizontal trackpad swipes
+           as back/forward navigation. Must be in the critical CSS so it
+           applies before tokens.css finishes loading. */
+        overscroll-behavior: none;
+      }
+      #app { position: fixed; inset: 0; }
+      ::-webkit-scrollbar { width: 5px; height: 5px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: oklch(0.35 0.02 260 / 0.5); border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: oklch(0.50 0.02 260 / 0.7); }
+      * { scrollbar-width: thin; scrollbar-color: oklch(0.35 0.02 260 / 0.5) transparent; }
+
+      /* ── Initial loading screen ───────────────────────────────────── */
+      #bt-loader {
+        position: fixed; inset: 0; z-index: 999;
+        background: oklch(0.16 0.015 260);
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        transition: opacity 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      #bt-loader.bt-out { opacity: 0; pointer-events: none; }
+
+      .bt-title {
+        font-family: 'Fraunces', Georgia, serif;
+        font-size: 1.75rem; font-weight: 500;
+        color: oklch(0.94 0.01 90);
+        letter-spacing: -0.02em; line-height: 1.2;
+        margin-bottom: 6px;
+      }
+      .bt-subtitle {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.6875rem;
+        color: oklch(0.45 0.015 260);
+        letter-spacing: 0.14em; text-transform: uppercase;
+        margin-bottom: 40px;
+      }
+
+      /* Timeline axis row */
+      .bt-timeline-row {
+        display: flex; align-items: center; gap: 10px;
+        margin-bottom: 28px;
+      }
+      .bt-edge-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.5625rem; color: oklch(0.38 0.015 260);
+        letter-spacing: 0.06em; text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      /* The axis track */
+      .bt-axis {
+        position: relative; width: 200px; height: 1px;
+        background: oklch(0.32 0.02 260);
+        overflow: hidden;
+      }
+      /* Traveling shimmer */
+      .bt-axis::after {
+        content: '';
+        position: absolute; top: 0; left: 0;
+        width: 72px; height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          oklch(0.78 0.14 85 / 0.4) 30%,
+          oklch(0.78 0.14 85) 50%,
+          oklch(0.78 0.14 85 / 0.4) 70%,
+          transparent 100%
+        );
+        animation: bt-sweep 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      /* Nodes on the axis */
+      .bt-nodes {
+        position: absolute; inset: 0;
+        display: flex; align-items: center;
+        justify-content: space-between;
+        padding: 0 4px;
+        /* lift above the shimmer */
+        z-index: 1;
+        transform: translateY(-50%) translateY(0.5px);
+      }
+      .bt-node {
+        width: 5px; height: 5px; border-radius: 50%;
+        background: oklch(0.32 0.02 260);
+        animation: bt-node-pulse 1.8s ease-in-out infinite;
+        flex-shrink: 0;
+      }
+      .bt-node:nth-child(1) { animation-delay: 0s; }
+      .bt-node:nth-child(2) { animation-delay: 0.36s; }
+      .bt-node:nth-child(3) { animation-delay: 0.72s; }
+      .bt-node:nth-child(4) { animation-delay: 1.08s; }
+      .bt-node:nth-child(5) { animation-delay: 1.44s; }
+
+      .bt-status {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.6875rem; color: oklch(0.40 0.015 260);
+        letter-spacing: 0.08em;
+        animation: bt-blink 2.4s ease-in-out infinite;
+      }
+
+      @keyframes bt-sweep {
+        from { transform: translateX(-72px); }
+        to   { transform: translateX(272px); }
+      }
+      @keyframes bt-node-pulse {
+        0%, 100% {
+          background: oklch(0.32 0.02 260);
+          box-shadow: none;
+          transform: scale(1);
+        }
+        50% {
+          background: oklch(0.78 0.14 85);
+          box-shadow: 0 0 7px 1px oklch(0.78 0.14 85 / 0.55);
+          transform: scale(1.6);
+        }
+      }
+      @keyframes bt-blink {
+        0%, 100% { opacity: 0.4; }
+        50%       { opacity: 0.9; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .bt-axis::after,
+        .bt-node,
+        .bt-status { animation: none !important; }
+        .bt-node { background: oklch(0.78 0.14 85); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div id="bt-loader" role="status" aria-label="Cargando Bible Timeline">
+      <div class="bt-title">Bible Timeline</div>
+      <div class="bt-subtitle">Génesis · Apocalipsis</div>
+      <div class="bt-timeline-row" aria-hidden="true">
+        <span class="bt-edge-label">Gén</span>
+        <div class="bt-axis">
+          <div class="bt-nodes">
+            <div class="bt-node"></div>
+            <div class="bt-node"></div>
+            <div class="bt-node"></div>
+            <div class="bt-node"></div>
+            <div class="bt-node"></div>
+          </div>
+        </div>
+        <span class="bt-edge-label">Apoc</span>
+      </div>
+      <div class="bt-status">Cargando…</div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
