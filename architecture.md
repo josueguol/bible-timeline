@@ -34,6 +34,10 @@
 ```
 bible_versions          → version metadata (RV60, NTV, …)
 bible_verses            → (version_id, ref) → text
+strong_entries          → Strong dictionary entries (H/G number → lemma/definition)
+bible_verse_segments    → word-level tokens for tagged original-language versions
+strong_entry_translations → localized Strong definitions (Spanish draft/reviewed)
+bible_verse_segment_strongs → token → Strong number links
 timeline_manifests      → reading order plan (e.g. lectura-expandida-rv60)
 timeline_chapter_entries→ ordered chapters in a manifest
 timeline_verse_order    → (manifest_id, sequence) → ref  [31102 rows for full Bible]
@@ -57,7 +61,8 @@ GET /health
 GET /api/timelines/{timelineId}/viewport   → ViewportResponse
 GET /api/timelines/{timelineId}/events/{eventId} → EventDetailResponse
 GET /api/bible/versions                    → VersionsListResponse
-GET /api/bible/verses                      → VersesRangeResponse
+GET /api/bible/verses                      → VersesRangeResponse (+ optional Strong segments, strongLang)
+GET /api/strongs/{strongNumber}?lang=es|en → StrongEntryResponse
 GET /api/search?q=…                        → SearchResponse
 ```
 
@@ -142,6 +147,7 @@ Each JSON file is a JSON Schema. Relevant ones:
 - `chapter-order-manifest.schema.json` — reading order
 - `verse-order.schema.json` — per-verse canonical sequence
 - `timeline-viewport-request/response.schema.json` — API contract
+- `strong-entry-response.schema.json` — Strong dictionary entry API contract
 
 ### Validation commands
 ```bash

@@ -37,7 +37,67 @@
             "type": "object",
             "minProperties": 1,
             "additionalProperties": { "type": ["string", "null"] }
+          },
+          "segments": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["position", "text", "strongs"],
+                "properties": {
+                  "position": { "type": "integer", "minimum": 1 },
+                  "text": { "type": "string", "minLength": 1 },
+                  "strongs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["strongNumber", "strongRaw"],
+                      "properties": {
+                        "strongNumber": { "type": "string", "pattern": "^[GH][0-9]+$" },
+                        "strongRaw": { "type": "string", "minLength": 1 }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
           }
+        },
+        "additionalProperties": false
+      }
+    },
+    "lexicon": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "strongNumber",
+          "language",
+          "lemma",
+          "definition",
+          "definitionLanguage",
+          "translationStatus",
+          "source"
+        ],
+        "properties": {
+          "strongNumber": { "type": "string", "pattern": "^[GH][0-9]+$" },
+          "language": { "type": "string", "enum": ["hebrew", "greek"] },
+          "lemma": { "type": "string", "minLength": 1 },
+          "transliteration": { "type": "string" },
+          "pronunciation": { "type": "string" },
+          "definition": { "type": "string" },
+          "derivation": { "type": "string" },
+          "kjvDefinition": { "type": "string" },
+          "definitionLanguage": { "type": "string", "enum": ["es", "en"] },
+          "translationStatus": {
+            "type": "string",
+            "enum": ["source", "machine", "reviewed", "fallback"]
+          },
+          "source": { "type": "string", "minLength": 1 }
         },
         "additionalProperties": false
       }

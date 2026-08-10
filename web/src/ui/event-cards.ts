@@ -1,8 +1,11 @@
 import { store } from "@store/app-store.ts";
-import type { VerseRangeRow, VisibleEvent } from "@api/types.ts";
+import type { StrongEntry, VerseRangeRow, VerseSegment, VisibleEvent } from "@api/types.ts";
 import { eraForSeq } from "../era-data.ts";
 import { subscribeCameraUpdate, type CameraSnapshot } from "../camera.ts";
 import { VerseWindowFetcher } from "@canvas/verse-window-fetcher.ts";
+import { authStore } from "@store/auth-store.ts";
+import { AuthModal } from "@ui/auth-modal.ts";
+import { NoteEditor } from "@ui/note-editor.ts";
 
 const TOTAL          = 31102;
 const CARD_GAP       = 10;
@@ -55,6 +58,7 @@ interface Placed {
   endSeq:   number;
   ev?: VisibleEvent;
   verseRow?: VerseRangeRow;
+  ancestryEl?: HTMLElement | null; // footer badge: "FOCUS" | "ANCESTRO" — updated in place
 }
 
 export class EventCards {
@@ -81,6 +85,14 @@ export class EventCards {
   private rightOverflowZoomLevel = -1;
   private rightOverflowHighWater = 0;
 
+  // Accumulated events within the current zoom level. Cards are added as they
+  // arrive from each viewport fetch but NEVER removed mid-pan — only cleared
+  // when the zoom level changes (user zoomed out). This prevents the flash
+  // where sub-events disappear because a pan-shifted focus-path excludes them
+  // from the next server response even though they're still on screen.
+  private readonly eventCache = new Map<string, VisibleEvent>();
+  private cacheZoomLevel = -1;
+
   private unsubCamera?: () => void;
   private unsubStore?:  () => void;
 
@@ -88,6 +100,8 @@ export class EventCards {
   private readonly verseFetcher: VerseWindowFetcher;
   private verseRows: VerseRangeRow[] = [];
   private verseVersions: string[]   = [];
+  private strongLexicon: Record<string, StrongEntry> = {};
+  private lastVersionKey = "";
 
   // Skeleton ghost cards shown while a verse-window fetch is in flight
   // and there are no cached rows to display.
@@ -123,9 +137,10 @@ export class EventCards {
     for (const sk of this.skeletonCards) this.skeletonEl.appendChild(sk);
 
     this.verseFetcher = new VerseWindowFetcher(
-      (rows, versions) => {
+      (rows, versions, lexicon) => {
         this.verseRows     = rows;
         this.verseVersions = versions;
+        this.strongLexicon = lexicon;
         this.isVerseLoading = false;
         this.skeletonEl.style.display = "none";
         this.rebuild();
@@ -219,10 +234,16 @@ export class EventCards {
   private rebuild(): void {
     const vp = store.getState().viewport;
 
-    // Zoom-level change resets the high-water mark. Within the same level
-    // we keep whatever overflow the densest card-cluster produced so far,
-    // so mid-pan fluctuations in card counts don't shrink the pan clamp.
     const level = vp?.zoomLevel?.level ?? -1;
+
+    // Clear accumulated event cache on zoom-level change so that zooming out
+    // discards sub-events that belong to the previous (deeper) level.
+    if (level !== this.cacheZoomLevel) {
+      this.cacheZoomLevel = level;
+      this.eventCache.clear();
+    }
+
+    // Reset overflow high-water mark on level change.
     if (level !== this.rightOverflowZoomLevel) {
       this.rightOverflowZoomLevel = level;
       this.rightOverflowHighWater  = 0;
@@ -236,14 +257,48 @@ export class EventCards {
 
     const mode: CardKind = this.isVerseMode() ? "verse" : "event";
 
+    // When active versions change in verse mode, discard all verse cards so
+    // they get recreated with the new version text after the fetcher responds.
+    const versionKey = store.getState().activeVersions.join(",");
+    if (mode === "verse" && versionKey !== this.lastVersionKey) {
+      this.lastVersionKey = versionKey;
+      const keepEvents = this.placed.filter((p) => p.kind === "event");
+      const dropVerses = this.placed.filter((p) => p.kind === "verse");
+      for (const p of dropVerses) { p.card.remove(); p.connector.remove(); }
+      this.placed = keepEvents;
+      this.verseRows = [];
+      this.strongLexicon = {};
+    }
+
+    // Merge incoming events into the per-level cache. Already-seen events are
+    // updated in place (refreshes isFocused / isFocusAncestor). New events are
+    // appended. Nothing is removed — removal only happens via the level-change
+    // clear above, preventing mid-pan disappearing of sub-events.
+    if (mode === "event") {
+      for (const ev of vp.visibleEvents) {
+        this.eventCache.set(ev.id, ev);
+      }
+      // Update ancestry badges on already-rendered cards so FOCUS doesn't stick
+      for (const p of this.placed) {
+        if (p.kind !== "event" || !p.ev || !p.ancestryEl) continue;
+        const fresh = this.eventCache.get(p.ev.id);
+        if (fresh) {
+          p.ev = fresh;
+          if (p.ancestryEl) updateAncestryBadge(p.ancestryEl, fresh.isFocused, fresh.isFocusAncestor);
+        }
+      }
+    }
+
     // A single ID scheme per mode so the diff can look cards up cheaply.
     const idOf = (p: Placed): string =>
       p.kind === "event" ? p.ev!.id : `verse-${p.verseRow!.sequence}`;
 
-    // Build the set of IDs the new viewport (or verse window) wants on screen.
+    // Build the wanted set from the ACCUMULATED cache (event mode) so that
+    // cards loaded in a prior pan position are kept even when the new viewport
+    // response omits them due to a focus-path shift.
     const wantedIds = new Set<string>();
     if (mode === "event") {
-      for (const ev of vp.visibleEvents) wantedIds.add(ev.id);
+      for (const id of this.eventCache.keys()) wantedIds.add(id);
     } else {
       this.requestVerseWindow();
       for (const r of this.verseRows.slice(0, MAX_VERSE_CARDS)) {
@@ -269,7 +324,7 @@ export class EventCards {
 
     // 3) Append new cards for wanted IDs we don't have yet.
     if (mode === "event") {
-      for (const ev of vp.visibleEvents) {
+      for (const ev of this.eventCache.values()) {
         if (existing.has(ev.id)) continue;
         this.appendEventCard(ev);
       }
@@ -313,11 +368,12 @@ export class EventCards {
     const era = eraForSeq(ev.startSequence, TOTAL);
     const card = this.makeEventCard(ev, era.color);
     const connector = this.makeConnector(era.color);
+    const ancestryEl = card.querySelector<HTMLElement>("[data-ancestry]");
 
     this.el.appendChild(card);
     this.el.appendChild(connector);
 
-    this.placed.push({
+    const placed: Placed = {
       kind: "event",
       card,
       connector,
@@ -326,7 +382,9 @@ export class EventCards {
       startSeq: ev.startSequence,
       endSeq:   ev.endSequence,
       ev,
-    });
+    };
+    if (ancestryEl) placed.ancestryEl = ancestryEl;
+    this.placed.push(placed);
   }
 
   private makeEventCard(ev: VisibleEvent, eraColor: string): HTMLElement {
@@ -407,21 +465,21 @@ export class EventCards {
     }
 
     // Footer: range + ancestry breadcrumb for focused card
-    if (ev.isFocused || ev.isFocusAncestor) {
-      const footer = document.createElement("footer");
-      footer.style.cssText =
-        "margin-top:auto;padding:8px 12px;border-top:1px solid var(--color-border);" +
-        "font-size:10px;font-family:var(--font-mono);color:var(--color-text-mute);" +
-        "letter-spacing:var(--tracking-wide);display:flex;justify-content:space-between;gap:6px;";
-      const range = document.createElement("span");
-      range.textContent = `${ev.startSequence}–${ev.endSequence}`;
-      const ancestry = document.createElement("span");
-      ancestry.textContent = ev.isFocused ? "FOCUS" : "ANCESTRO";
-      ancestry.style.color = "var(--color-accent)";
-      footer.appendChild(range);
-      footer.appendChild(ancestry);
-      card.appendChild(footer);
-    }
+    const footer = document.createElement("footer");
+    footer.style.cssText =
+      "margin-top:auto;padding:8px 12px;border-top:1px solid var(--color-border);" +
+      "font-size:10px;font-family:var(--font-mono);color:var(--color-text-mute);" +
+      "letter-spacing:var(--tracking-wide);display:flex;justify-content:space-between;gap:6px;";
+    const range = document.createElement("span");
+    range.textContent = `${ev.startSequence}–${ev.endSequence}`;
+    const ancestry = document.createElement("span");
+    ancestry.dataset.ancestry = "1";
+    ancestry.style.color = "var(--color-accent)";
+    footer.appendChild(range);
+    footer.appendChild(ancestry);
+    card.appendChild(footer);
+
+    updateAncestryBadge(ancestry, ev.isFocused, ev.isFocusAncestor);
 
     return card;
   }
@@ -490,6 +548,29 @@ export class EventCards {
     });
     header.appendChild(copyBtn);
 
+    const noteBtn = document.createElement("button");
+    noteBtn.type = "button";
+    noteBtn.textContent = "✎";
+    noteBtn.title = "Ver / agregar notas";
+    noteBtn.setAttribute("aria-label", "Notas de este versículo");
+    noteBtn.style.cssText =
+      "background:oklch(0.72 0.20 50);color:oklch(0.14 0.015 260);" +
+      "border:none;border-radius:5px;font-size:13px;font-weight:700;" +
+      "width:22px;height:22px;cursor:pointer;flex-shrink:0;line-height:1;padding:0;";
+    noteBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!authStore.isAuthenticated()) {
+        const modal = new AuthModal();
+        modal.open();
+        return;
+      }
+      const editor = new NoteEditor(row.ref, row.ref, null, () => {
+        window.dispatchEvent(new Event("note-saved"));
+      }, () => editor.unmount());
+      editor.mount();
+    });
+    header.appendChild(noteBtn);
+
     // Scrollable body with each version
     const body = document.createElement("div");
     body.className = "vc-scroll";
@@ -516,10 +597,15 @@ export class EventCards {
         "font-family:var(--font-mono);font-size:9px;letter-spacing:var(--tracking-widest);" +
         "font-weight:var(--font-semibold);color:var(--color-text-mute);margin-bottom:3px;";
       const verseText = document.createElement("div");
-      verseText.textContent = text;
       verseText.style.cssText =
         "font-family:var(--font-serif);font-size:var(--text-sm);line-height:var(--leading-snug);" +
         "color:var(--color-text);text-wrap:pretty;";
+      const segments = row.segments?.[code];
+      if (segments?.length) {
+        renderSegmentedText(verseText, code, segments, this.strongLexicon);
+      } else {
+        verseText.textContent = text;
+      }
       block.appendChild(versionLabel);
       block.appendChild(verseText);
       body.appendChild(block);
@@ -710,6 +796,123 @@ function verseCardStyle(density: string, eraColor: string): string {
   );
 }
 
+function renderSegmentedText(
+  container: HTMLElement,
+  versionCode: string,
+  segments: VerseSegment[],
+  lexicon: Record<string, StrongEntry>,
+): void {
+  const upperCode = versionCode.toUpperCase();
+  const isHebrew = upperCode.startsWith("HEB");
+  container.style.direction = isHebrew ? "rtl" : "ltr";
+  container.style.textAlign = isHebrew ? "right" : "left";
+  container.style.display = "flex";
+  container.style.flexWrap = "wrap";
+  container.style.gap = "0 0.32em";
+
+  for (const segment of segments) {
+    const primaryStrong = segment.strongs.find((strong) => lexicon[strong.strongNumber]);
+    const entry = primaryStrong ? lexicon[primaryStrong.strongNumber] : undefined;
+    if (!primaryStrong || !entry) {
+      const text = document.createElement("span");
+      text.textContent = segment.text;
+      container.appendChild(text);
+      continue;
+    }
+
+    const token = document.createElement("button");
+    token.type = "button";
+    token.textContent = segment.text;
+    token.title = `${primaryStrong.strongNumber} · ${entry.lemma}`;
+    token.setAttribute("aria-label", `${segment.text}: ${primaryStrong.strongNumber} ${entry.lemma}`);
+    token.style.cssText =
+      "font:inherit;color:var(--color-text);border:none;padding:0 1px;" +
+      "border-bottom:1px dotted var(--color-accent);border-radius:2px;" +
+      "background:transparent;cursor:pointer;pointer-events:auto;";
+    token.addEventListener("click", (event) => {
+      event.stopPropagation();
+      showStrongPopover(token, primaryStrong.strongNumber, entry);
+    });
+    container.appendChild(token);
+  }
+}
+
+function showStrongPopover(anchor: HTMLElement, strongNumber: string, entry: StrongEntry): void {
+  document.querySelector('[data-strong-popover="1"]')?.remove();
+
+  const popover = document.createElement("aside");
+  popover.dataset.strongPopover = "1";
+  popover.style.cssText =
+    "position:fixed;z-index:calc(var(--z-cards) + 5);max-width:280px;" +
+    "background:var(--color-surface);border:1px solid var(--color-border);" +
+    "border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);" +
+    "padding:12px;pointer-events:auto;color:var(--color-text);";
+
+  const title = document.createElement("div");
+  title.style.cssText =
+    "display:flex;justify-content:space-between;gap:10px;align-items:baseline;" +
+    "font-family:var(--font-serif);font-size:var(--text-base);";
+  const lemma = document.createElement("strong");
+  lemma.textContent = entry.lemma;
+  const number = document.createElement("span");
+  number.textContent = strongNumber;
+  number.style.cssText =
+    "font-family:var(--font-mono);font-size:10px;color:var(--color-accent);" +
+    "letter-spacing:var(--tracking-wide);";
+  title.appendChild(lemma);
+  title.appendChild(number);
+
+  const metaParts = [entry.transliteration, entry.pronunciation]
+    .filter((value): value is string => Boolean(value?.trim()));
+  const meta = document.createElement("div");
+  meta.textContent = metaParts.join(" · ");
+  meta.style.cssText = "margin-top:4px;font-size:11px;color:var(--color-text-mute);";
+
+  const definition = document.createElement("p");
+  definition.textContent = entry.definition;
+  definition.style.cssText =
+    "margin:8px 0 0;font-size:var(--text-xs);line-height:var(--leading-normal);" +
+    "color:var(--color-text-dim);";
+
+  popover.appendChild(title);
+  if (metaParts.length) popover.appendChild(meta);
+  popover.appendChild(definition);
+
+  if (entry.definitionLanguage === "en") {
+    const fallback = document.createElement("div");
+    fallback.textContent = "Definición original en inglés; traducción española pendiente.";
+    fallback.style.cssText =
+      "margin-top:6px;font-size:10px;color:var(--color-text-mute);" +
+      "line-height:var(--leading-normal);";
+    popover.appendChild(fallback);
+  }
+
+  if (entry.kjvDefinition?.trim()) {
+    const kjv = document.createElement("div");
+    kjv.textContent = `Equivalentes KJV: ${entry.kjvDefinition}`;
+    kjv.style.cssText =
+      "margin-top:8px;font-size:10px;color:var(--color-text-mute);" +
+      "font-family:var(--font-mono);line-height:var(--leading-normal);";
+    popover.appendChild(kjv);
+  }
+
+  document.body.appendChild(popover);
+  const rect = anchor.getBoundingClientRect();
+  const popoverRect = popover.getBoundingClientRect();
+  const left = Math.min(window.innerWidth - popoverRect.width - 12, Math.max(12, rect.left));
+  const top = Math.min(window.innerHeight - popoverRect.height - 12, rect.bottom + 8);
+  popover.style.left = `${Math.round(left)}px`;
+  popover.style.top = `${Math.round(top)}px`;
+
+  const close = (event: MouseEvent) => {
+    if (!popover.contains(event.target as Node) && event.target !== anchor) {
+      popover.remove();
+      document.removeEventListener("mousedown", close, true);
+    }
+  };
+  setTimeout(() => document.addEventListener("mousedown", close, true), 0);
+}
+
 function connectorColorFor(p: Placed): string {
   const seq = p.axisSeq;
   const era = eraForSeq(seq, TOTAL);
@@ -780,4 +983,17 @@ function makeSkeletonCard(): HTMLElement {
   // Stagger the shimmer animation per card via animationDelay on each line.
   // We do it post-construction so innerHTML is already set.
   return card;
+}
+
+function updateAncestryBadge(el: HTMLElement, isFocused: boolean, isFocusAncestor: boolean): void {
+  if (isFocused) {
+    el.textContent = "FOCUS";
+    el.style.display = "";
+  } else if (isFocusAncestor) {
+    el.textContent = "ANCESTRO";
+    el.style.display = "";
+  } else {
+    el.textContent = "";
+    el.style.display = "none";
+  }
 }

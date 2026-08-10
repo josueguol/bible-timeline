@@ -14,13 +14,15 @@ namespace BibleTimeline.Api.Tests;
 /// </summary>
 public class BibleEndpointsSmokeTests : IDisposable
 {
-    private const string BaseConnStr =
-        "Host=localhost;Port=5432;Username=postgres;Password=postgres;Database=postgres";
+    private static string BaseConnStr =>
+        Environment.GetEnvironmentVariable("BIBLE_TIMELINE_TEST_DB")
+        ?? "Host=localhost;Port=5432;Username=postgres;Password=postgres;Database=postgres";
 
     private readonly string _schemaName = $"test_{Guid.NewGuid():N}";
     private readonly BibleReadingService _bibleReader;
     private readonly SearchService _search;
     private readonly EventDetailService _eventDetail;
+    private readonly StrongService _strongService;
 
     public BibleEndpointsSmokeTests()
     {
@@ -39,6 +41,7 @@ public class BibleEndpointsSmokeTests : IDisposable
         _bibleReader = new BibleReadingService(factory, options);
         _search = new SearchService(factory, options);
         _eventDetail = new EventDetailService(factory);
+        _strongService = new StrongService(factory);
     }
 
     [Fact]
@@ -90,6 +93,54 @@ public class BibleEndpointsSmokeTests : IDisposable
         Assert.Equal(25, result.Rows.Count);
         Assert.Equal(1, result.Range.FromSequence);
         Assert.Equal(25, result.Range.ToSequence);
+    }
+
+    [Fact]
+    public void GetRange_With_Strong_Returns_Word_Segments_And_Lexicon()
+    {
+        var result = _bibleReader.GetRange(
+            versionCodes: new[] { "HEB_OSHB" },
+            fromSequence: null,
+            toSequence: null,
+            fromRef: "Génesis 1:1",
+            toRef: "Génesis 1:1",
+            manifestId: null,
+            limit: 10,
+            includeStrong: true);
+
+        var row = Assert.Single(result.Rows);
+        Assert.NotNull(row.Segments);
+        Assert.True(row.Segments!.ContainsKey("HEB_OSHB"));
+        Assert.Contains(row.Segments["HEB_OSHB"], segment =>
+            segment.Text == "בְּרֵאשִׁית"
+            && segment.Strongs.Any(strong => strong.StrongNumber == "H7225"));
+        Assert.NotNull(result.Lexicon);
+        Assert.True(result.Lexicon!.ContainsKey("H7225"));
+        Assert.Equal("בְּרֵאשִׁית", result.Lexicon["H7225"].Lemma);
+        Assert.Equal("principio", result.Lexicon["H7225"].Definition);
+        Assert.Equal("es", result.Lexicon["H7225"].DefinitionLanguage);
+        Assert.Equal("reviewed", result.Lexicon["H7225"].TranslationStatus);
+    }
+
+    [Fact]
+    public void StrongService_Normalizes_Zero_Padded_Numbers()
+    {
+        var entry = _strongService.Get("H07225");
+        Assert.NotNull(entry);
+        Assert.Equal("H7225", entry!.StrongNumber);
+        Assert.Equal("principio", entry.Definition);
+        Assert.Equal("es", entry.DefinitionLanguage);
+    }
+
+    [Fact]
+    public void StrongService_Returns_English_When_Requested()
+    {
+        var entry = _strongService.Get("H07225", "en");
+        Assert.NotNull(entry);
+        Assert.Equal("H7225", entry!.StrongNumber);
+        Assert.Equal("beginning", entry.Definition);
+        Assert.Equal("en", entry.DefinitionLanguage);
+        Assert.Equal("source", entry.TranslationStatus);
     }
 
     [Fact]
@@ -155,6 +206,7 @@ public class BibleEndpointsSmokeTests : IDisposable
         conn.Open();
         ExecuteScript(conn, File.ReadAllText(schemaPath));
         ExecuteScript(conn, File.ReadAllText(seedPath));
+        ExecuteScript(conn, StrongFixtureSql);
     }
 
     private static void ExecuteScript(NpgsqlConnection connection, string script)
@@ -176,4 +228,60 @@ public class BibleEndpointsSmokeTests : IDisposable
         }
         catch { /* best effort */ }
     }
+
+    private const string StrongFixtureSql = """
+        INSERT INTO bible_versions (version_id, code, title, language, source_path) VALUES
+        ('heb_oshb', 'HEB_OSHB', 'Open Scriptures Hebrew Bible', 'heb', 'resources/biblias/HEB_OSHB.xml')
+        ON CONFLICT (version_id) DO UPDATE SET
+          code = EXCLUDED.code,
+          title = EXCLUDED.title,
+          language = EXCLUDED.language,
+          source_path = EXCLUDED.source_path;
+
+        INSERT INTO bible_verses (version_id, ref, book, chapter, verse, text) VALUES
+        ('heb_oshb', 'Génesis 1:1', 'Génesis', 1, 1, 'בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ ׃')
+        ON CONFLICT (version_id, ref) DO UPDATE SET text = EXCLUDED.text;
+
+        INSERT INTO strong_entries
+          (strong_number, language, lemma, transliteration, pronunciation, definition, derivation, kjv_definition, source)
+        VALUES
+          ('H7225', 'hebrew', 'בְּרֵאשִׁית', 'rêshîyth', 'ray-sheeth', 'beginning', '', 'beginning', 'fixture'),
+          ('H1254', 'hebrew', 'בָּרָא', 'bârâʼ', 'baw-raw', 'to create', '', 'create', 'fixture')
+        ON CONFLICT (strong_number) DO UPDATE SET
+          language = EXCLUDED.language,
+          lemma = EXCLUDED.lemma,
+          transliteration = EXCLUDED.transliteration,
+          pronunciation = EXCLUDED.pronunciation,
+          definition = EXCLUDED.definition,
+          derivation = EXCLUDED.derivation,
+          kjv_definition = EXCLUDED.kjv_definition,
+          source = EXCLUDED.source;
+
+        INSERT INTO strong_entry_translations
+          (strong_number, language_code, definition, derivation, kjv_definition, translation_status, source)
+        VALUES
+          ('H7225', 'es', 'principio', '', 'principio', 'reviewed', 'fixture'),
+          ('H1254', 'es', 'crear', '', 'crear', 'reviewed', 'fixture')
+        ON CONFLICT (strong_number, language_code) DO UPDATE SET
+          definition = EXCLUDED.definition,
+          derivation = EXCLUDED.derivation,
+          kjv_definition = EXCLUDED.kjv_definition,
+          translation_status = EXCLUDED.translation_status,
+          source = EXCLUDED.source;
+
+        INSERT INTO bible_verse_segments (version_id, ref, position, text) VALUES
+          ('heb_oshb', 'Génesis 1:1', 1, 'בְּרֵאשִׁית'),
+          ('heb_oshb', 'Génesis 1:1', 2, 'בָּרָא'),
+          ('heb_oshb', 'Génesis 1:1', 3, '׃')
+        ON CONFLICT (version_id, ref, position) DO UPDATE SET text = EXCLUDED.text;
+
+        INSERT INTO bible_verse_segment_strongs
+          (version_id, ref, position, sequence, strong_number, strong_raw)
+        VALUES
+          ('heb_oshb', 'Génesis 1:1', 1, 1, 'H7225', 'H07225'),
+          ('heb_oshb', 'Génesis 1:1', 2, 1, 'H1254', 'H01254')
+        ON CONFLICT (version_id, ref, position, sequence) DO UPDATE SET
+          strong_number = EXCLUDED.strong_number,
+          strong_raw = EXCLUDED.strong_raw;
+        """;
 }

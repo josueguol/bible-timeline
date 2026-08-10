@@ -35,6 +35,10 @@ def sql_str(v: str) -> str:
     return f"'{escape_sql(v)}'"
 
 
+def element_text(el: ET.Element) -> str:
+    return " ".join("".join(el.itertext()).split())
+
+
 # Book number → Spanish canonical name (matches refs in timeline_verse_order).
 # Numbers 1-66 = Protestant canon; 67-81 = LXX deuterocanonical extras.
 BOOK_NAMES_ES: dict[int, str] = {
@@ -89,18 +93,54 @@ def main() -> int:
     verse_rows: list[str] = []
     unmapped: set[int] = set()
 
-    for book_el in root.iter("BIBLEBOOK"):
-        bnumber = int(book_el.get("bnumber", "0"))
-        bname_en = book_el.get("bname", f"Book{bnumber}")
+    # Detect format: Zefania (<BIBLEBOOK>) vs simple (<bible><testament><book>)
+    is_zefania = root.tag in ("XMLBIBLE", "XMLBIBLE/") or bool(root.find(".//BIBLEBOOK"))
+
+    if is_zefania:
+        book_iter = root.iter("BIBLEBOOK")
+        def get_bnumber(el: ET.Element) -> int:
+            return int(el.get("bnumber", "0"))
+        def get_chapters(el: ET.Element):
+            return el  # direct children are chapters
+        def get_cnumber(el: ET.Element) -> int:
+            return int(el.get("cnumber", "0"))
+        def get_verses(el: ET.Element):
+            return el
+        def get_vnumber(el: ET.Element) -> int:
+            return int(el.get("vnumber", "0"))
+        def get_text(el: ET.Element) -> str:
+            return element_text(el)
+    else:
+        # Simple format: <bible><testament><book number="N"><chapter number="N"><verse number="N">
+        book_iter = root.iter("book")
+        def get_bnumber(el: ET.Element) -> int:
+            return int(el.get("number", "0"))
+        def get_chapters(el: ET.Element):
+            return el
+        def get_cnumber(el: ET.Element) -> int:
+            return int(el.get("number", "0"))
+        def get_verses(el: ET.Element):
+            return el
+        def get_vnumber(el: ET.Element) -> int:
+            return int(el.get("number", "0"))
+        def get_text(el: ET.Element) -> str:
+            return element_text(el)
+
+    for book_el in book_iter:
+        bnumber = get_bnumber(book_el)
         book_name = BOOK_NAMES_ES.get(bnumber)
         if book_name is None:
             unmapped.add(bnumber)
             continue
-        for chap_el in book_el:
-            cnumber = int(chap_el.get("cnumber", "0"))
-            for vers_el in chap_el:
-                vnumber = int(vers_el.get("vnumber", "0"))
-                text = (vers_el.text or "").strip()
+        for chap_el in get_chapters(book_el):
+            if chap_el.tag not in ("CHAPTER", "chapter"):
+                continue
+            cnumber = get_cnumber(chap_el)
+            for vers_el in get_verses(chap_el):
+                if vers_el.tag not in ("VERS", "verse"):
+                    continue
+                vnumber = get_vnumber(vers_el)
+                text = get_text(vers_el)
                 if not text:
                     continue
                 ref = f"{book_name} {cnumber}:{vnumber}"

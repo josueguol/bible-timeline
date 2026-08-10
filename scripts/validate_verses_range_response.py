@@ -8,14 +8,37 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "docs" / "contracts" / "verses-range-response.schema.json"
 
-ROOT_ALLOWED = {"manifestId", "versions", "range", "rows"}
+ROOT_ALLOWED = {"manifestId", "versions", "range", "rows", "lexicon"}
 ROOT_REQUIRED = {"manifestId", "versions", "rows"}
 
 RANGE_ALLOWED = {"fromSequence", "toSequence", "fromRef", "toRef"}
 RANGE_REQUIRED = {"fromSequence", "toSequence"}
 
-ROW_ALLOWED = {"sequence", "ref", "book", "chapter", "verse", "texts"}
-ROW_REQUIRED = ROW_ALLOWED
+ROW_ALLOWED = {"sequence", "ref", "book", "chapter", "verse", "texts", "segments"}
+ROW_REQUIRED = {"sequence", "ref", "book", "chapter", "verse", "texts"}
+
+LEXICON_ALLOWED = {
+    "strongNumber",
+    "language",
+    "lemma",
+    "transliteration",
+    "pronunciation",
+    "definition",
+    "derivation",
+    "kjvDefinition",
+    "definitionLanguage",
+    "translationStatus",
+    "source",
+}
+LEXICON_REQUIRED = {
+    "strongNumber",
+    "language",
+    "lemma",
+    "definition",
+    "definitionLanguage",
+    "translationStatus",
+    "source",
+}
 
 
 def fail(message: str) -> int:
@@ -69,6 +92,105 @@ def validate_row(row: object, versions: list[str], index: int) -> list[str]:
             if value is not None and not isinstance(value, str):
                 errors.append(f"{prefix}.texts['{code}'] must be string or null")
 
+    segments = row.get("segments")
+    if segments is not None:
+        if not isinstance(segments, dict) or not segments:
+            errors.append(f"{prefix}.segments must be a non-empty object when provided")
+        else:
+            extra_codes = sorted(set(segments) - set(versions))
+            if extra_codes:
+                errors.append(f"{prefix}.segments has unexpected versions {extra_codes}")
+            for code, segment_list in segments.items():
+                segment_prefix = f"{prefix}.segments['{code}']"
+                if not isinstance(segment_list, list) or not segment_list:
+                    errors.append(f"{segment_prefix} must be a non-empty array")
+                    continue
+                previous_position = 0
+                for segment_index, segment in enumerate(segment_list):
+                    item_prefix = f"{segment_prefix}[{segment_index}]"
+                    if not isinstance(segment, dict):
+                        errors.append(f"{item_prefix} must be an object")
+                        continue
+                    unexpected_segment = sorted(set(segment) - {"position", "text", "strongs"})
+                    if unexpected_segment:
+                        errors.append(f"{item_prefix}: unexpected properties {unexpected_segment}")
+                    for required in ("position", "text", "strongs"):
+                        if required not in segment:
+                            errors.append(f"{item_prefix}: missing {required}")
+                    position = segment.get("position")
+                    if not isinstance(position, int) or position < 1:
+                        errors.append(f"{item_prefix}.position must be integer >= 1")
+                    elif position <= previous_position:
+                        errors.append(f"{item_prefix}.position must be strictly increasing")
+                    if isinstance(position, int):
+                        previous_position = position
+                    text = segment.get("text")
+                    if not isinstance(text, str) or not text.strip():
+                        errors.append(f"{item_prefix}.text must be non-empty string")
+                    strongs = segment.get("strongs")
+                    if not isinstance(strongs, list):
+                        errors.append(f"{item_prefix}.strongs must be an array")
+                    else:
+                        for strong_index, strong in enumerate(strongs):
+                            strong_prefix = f"{item_prefix}.strongs[{strong_index}]"
+                            if not isinstance(strong, dict):
+                                errors.append(f"{strong_prefix} must be an object")
+                                continue
+                            unexpected_strong = sorted(set(strong) - {"strongNumber", "strongRaw"})
+                            if unexpected_strong:
+                                errors.append(f"{strong_prefix}: unexpected properties {unexpected_strong}")
+                            strong_number = strong.get("strongNumber")
+                            if not isinstance(strong_number, str) or not strong_number:
+                                errors.append(f"{strong_prefix}.strongNumber must be non-empty string")
+                            elif strong_number[0] not in {"G", "H"} or not strong_number[1:].isdigit():
+                                errors.append(f"{strong_prefix}.strongNumber must match ^[GH][0-9]+$")
+                            strong_raw = strong.get("strongRaw")
+                            if not isinstance(strong_raw, str) or not strong_raw.strip():
+                                errors.append(f"{strong_prefix}.strongRaw must be non-empty string")
+
+    return errors
+
+
+def validate_lexicon(lexicon: object) -> list[str]:
+    errors: list[str] = []
+    if lexicon is None:
+        return errors
+    if not isinstance(lexicon, dict):
+        return ["lexicon must be an object when provided"]
+
+    for key, item in lexicon.items():
+        prefix = f"lexicon['{key}']"
+        if not isinstance(key, str) or key[0:1] not in {"G", "H"} or not key[1:].isdigit():
+            errors.append(f"{prefix}: key must match ^[GH][0-9]+$")
+        if not isinstance(item, dict):
+            errors.append(f"{prefix} must be an object")
+            continue
+        missing = LEXICON_REQUIRED - set(item)
+        if missing:
+            errors.append(f"{prefix}: missing {sorted(missing)}")
+        unexpected = sorted(set(item) - LEXICON_ALLOWED)
+        if unexpected:
+            errors.append(f"{prefix}: unexpected properties {unexpected}")
+        strong_number = item.get("strongNumber")
+        if strong_number != key:
+            errors.append(f"{prefix}.strongNumber must equal lexicon key")
+        language = item.get("language")
+        if language not in {"hebrew", "greek"}:
+            errors.append(f"{prefix}.language must be hebrew or greek")
+        for text_key in ("lemma", "definition", "source"):
+            value = item.get(text_key)
+            if not isinstance(value, str) or not value.strip():
+                errors.append(f"{prefix}.{text_key} must be non-empty string")
+        for optional_key in ("transliteration", "pronunciation", "derivation", "kjvDefinition"):
+            value = item.get(optional_key)
+            if value is not None and not isinstance(value, str):
+                errors.append(f"{prefix}.{optional_key} must be string when provided")
+        if item.get("definitionLanguage") not in {"es", "en"}:
+            errors.append(f"{prefix}.definitionLanguage must be es or en")
+        if item.get("translationStatus") not in {"source", "machine", "reviewed", "fallback"}:
+            errors.append(
+                f"{prefix}.translationStatus must be source, machine, reviewed, or fallback"
+            )
     return errors
 
 
@@ -118,6 +240,7 @@ def validate_payload(payload: object) -> list[str]:
                     errors.append(f"range.{key} must be non-empty string when provided")
 
     rows = payload.get("rows")
+    referenced_strongs: set[str] = set()
     if not isinstance(rows, list) or not rows:
         errors.append("rows must be a non-empty array")
     else:
@@ -133,6 +256,25 @@ def validate_payload(payload: object) -> list[str]:
                             f"rows[{index}].sequence must be strictly increasing (got {sequence} after {previous_sequence})"
                         )
                     previous_sequence = sequence
+                segments = row.get("segments")
+                if isinstance(segments, dict):
+                    for segment_list in segments.values():
+                        if isinstance(segment_list, list):
+                            for segment in segment_list:
+                                if isinstance(segment, dict) and isinstance(segment.get("strongs"), list):
+                                    for strong in segment["strongs"]:
+                                        if isinstance(strong, dict) and isinstance(strong.get("strongNumber"), str):
+                                            referenced_strongs.add(strong["strongNumber"])
+
+    lexicon = payload.get("lexicon")
+    errors.extend(validate_lexicon(lexicon))
+    if referenced_strongs:
+        if not isinstance(lexicon, dict):
+            errors.append("lexicon is required when segments reference Strong numbers")
+        else:
+            missing = sorted(referenced_strongs - set(lexicon))
+            if missing:
+                errors.append(f"lexicon missing referenced Strong numbers {missing}")
 
     return errors
 

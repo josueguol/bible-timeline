@@ -1,4 +1,4 @@
-const BASE_URL = (import.meta.env["VITE_API_BASE"] as string | undefined) ?? "http://localhost:5080";
+const BASE_URL = (import.meta.env["VITE_API_BASE"] as string | undefined) ?? window.location.origin;
 
 export class ApiError extends Error {
   constructor(

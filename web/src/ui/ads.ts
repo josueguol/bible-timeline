@@ -173,7 +173,7 @@ export class Ads {
       "position:fixed;" +
       "right:0;" +
       "top:calc(var(--topbar-h) + var(--era-band-h) + 8px);" +
-      `width:${FLOAT_TAB_W + FLOAT_AD_W}px;` +
+      `width:${FLOAT_TAB_W + FLOAT_AD_W + 2}px;` +
       "height:281px;overflow:hidden;" +
       "z-index:11;" +          // above event-cards (10), below minimap (22)
       "display:flex;flex-direction:row;align-items:flex-start;" +
@@ -197,21 +197,25 @@ export class Ads {
     tab.addEventListener("mouseenter", () => { tab.style.color = "var(--color-text-dim)"; });
     tab.addEventListener("mouseleave", () => { tab.style.color = "var(--color-text-mute)"; });
 
-    // 300×250 ad content card — height clamped so AdSense iframe can't expand it.
-    // 6px pad-top + 17px label + 250px ins + 8px pad-bottom = 281px
+    // 300×250 ad content card.
+    // flex-basis = FLOAT_AD_W + 2 to absorb the 1px border on each side,
+    // so the inner area is exactly FLOAT_AD_W (300px) — the correct ad width.
+    // No horizontal padding here; the label carries its own 8px indent.
+    // Height: 6px pad-top + 17px label + 250px ins + 8px pad-bottom = 281px.
     const content = document.createElement("div");
     content.style.cssText =
-      `flex:0 0 ${FLOAT_AD_W}px;` +
+      `flex:0 0 ${FLOAT_AD_W + 2}px;` +
       "height:281px;overflow:hidden;" +
       "background:color-mix(in oklch,var(--color-surface) 92%,transparent);" +
       "border:1px dashed var(--color-border);" +
       "border-radius:var(--radius-md) 0 var(--radius-md) var(--radius-md);" +
-      "padding:6px 8px 8px;" +
+      "padding:6px 0 8px;" +
       "backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);";
 
     const label = document.createElement("div");
     label.textContent = "Publicidad";
     label.style.cssText =
+      "padding:0 8px;" +
       "font-size:9px;color:var(--color-text-mute);" +
       "letter-spacing:var(--tracking-widest);font-weight:var(--font-semibold);" +
       "margin-bottom:4px;";
@@ -236,7 +240,7 @@ export class Ads {
     let hidden = false;
     tab.addEventListener("click", () => {
       hidden = !hidden;
-      wrap.style.right = hidden ? `-${FLOAT_AD_W}px` : "0";
+      wrap.style.right = hidden ? `-${FLOAT_AD_W + 2}px` : "0";
       tab.textContent  = hidden ? "˂" : "˃";
       tab.title        = hidden ? "Mostrar anuncio" : "Ocultar anuncio";
       tab.setAttribute("aria-label", tab.title);

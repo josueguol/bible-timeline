@@ -8,6 +8,14 @@ export default defineConfig({
     proxy: {
       "/api": "http://localhost:5080",
       "/health": "http://localhost:5080",
+      "/notes-api": {
+        target: "http://localhost:5081",
+        rewrite: (path) => path.replace(/^\/notes-api/, ""),
+      },
+      "/content-api": {
+        target: "http://localhost:5082",
+        rewrite: (path) => path.replace(/^\/content-api/, ""),
+      },
     },
   },
   resolve: {
@@ -26,7 +34,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webmanifest}"],
         navigateFallback: "/offline.html",
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/notes-api\//],
 
         runtimeCaching: [
           // viewport + event detail: NetworkFirst, short TTL
@@ -71,6 +79,6 @@ export default defineConfig({
   ],
   build: {
     target: "es2022",
-    sourcemap: true,
+    sourcemap: false,
   },
 });

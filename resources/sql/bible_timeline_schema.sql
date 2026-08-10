@@ -17,6 +17,57 @@ CREATE TABLE IF NOT EXISTS bible_verses (
   FOREIGN KEY (version_id) REFERENCES bible_versions(version_id)
 );
 
+CREATE TABLE IF NOT EXISTS strong_entries (
+  strong_number TEXT PRIMARY KEY,
+  language TEXT NOT NULL,
+  lemma TEXT NOT NULL,
+  transliteration TEXT,
+  pronunciation TEXT,
+  definition TEXT NOT NULL,
+  derivation TEXT,
+  kjv_definition TEXT,
+  source TEXT NOT NULL,
+  CHECK (language IN ('hebrew', 'greek')),
+  CHECK (strong_number ~ '^[GH][0-9]+$')
+);
+
+CREATE TABLE IF NOT EXISTS strong_entry_translations (
+  strong_number TEXT NOT NULL,
+  language_code TEXT NOT NULL,
+  definition TEXT NOT NULL,
+  derivation TEXT,
+  kjv_definition TEXT,
+  translation_status TEXT NOT NULL,
+  source TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (strong_number, language_code),
+  FOREIGN KEY (strong_number) REFERENCES strong_entries(strong_number),
+  CHECK (language_code IN ('es')),
+  CHECK (translation_status IN ('machine', 'reviewed'))
+);
+
+CREATE TABLE IF NOT EXISTS bible_verse_segments (
+  version_id TEXT NOT NULL,
+  ref TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  text TEXT NOT NULL,
+  PRIMARY KEY (version_id, ref, position),
+  FOREIGN KEY (version_id, ref) REFERENCES bible_verses(version_id, ref)
+);
+
+CREATE TABLE IF NOT EXISTS bible_verse_segment_strongs (
+  version_id TEXT NOT NULL,
+  ref TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  sequence INTEGER NOT NULL,
+  strong_number TEXT NOT NULL,
+  strong_raw TEXT NOT NULL,
+  PRIMARY KEY (version_id, ref, position, sequence),
+  FOREIGN KEY (version_id, ref, position)
+    REFERENCES bible_verse_segments(version_id, ref, position),
+  FOREIGN KEY (strong_number) REFERENCES strong_entries(strong_number)
+);
+
 CREATE TABLE IF NOT EXISTS timeline_manifests (
   manifest_id TEXT PRIMARY KEY,
   source_version_id TEXT NOT NULL,
@@ -109,6 +160,12 @@ CREATE TABLE IF NOT EXISTS timeline_event_sources (
 
 CREATE INDEX IF NOT EXISTS idx_bible_verses_version_book_chapter_verse
   ON bible_verses (version_id, book, chapter, verse);
+
+CREATE INDEX IF NOT EXISTS idx_bible_verse_segments_version_ref
+  ON bible_verse_segments (version_id, ref, position);
+
+CREATE INDEX IF NOT EXISTS idx_bible_verse_segment_strongs_number
+  ON bible_verse_segment_strongs (strong_number);
 
 CREATE INDEX IF NOT EXISTS idx_timeline_chapter_entries_manifest_sequence
   ON timeline_chapter_entries (manifest_id, sequence);

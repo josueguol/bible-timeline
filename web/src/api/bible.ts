@@ -19,6 +19,8 @@ export function fetchVerses(
       toSequence:     req.toSequence,
       manifestId:     req.manifestId,
       limit:          req.limit,
+      includeStrong:  req.includeStrong,
+      strongLang:     req.strongLang,
     },
     signal,
   );

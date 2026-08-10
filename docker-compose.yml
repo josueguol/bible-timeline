@@ -1,0 +1,63 @@
+services:
+
+  web:
+    build: ./web
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:5173:80"
+
+  content-api:
+    build: ./content-api
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:-Production}
+      ASPNETCORE_URLS: http://+:5082
+      ConnectionStrings__Default: ${CONTENT_API_DB:?CONTENT_API_DB must be set}
+      Cors__AllowedOrigins: ${CONTENT_API_ALLOWED_ORIGINS:-}
+    expose:
+      - "5082"
+
+  content-admin-api:
+    build: ./content-admin-api
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:-Production}
+      ASPNETCORE_URLS: http://+:5083
+      ConnectionStrings__Default: ${CONTENT_ADMIN_DB:?CONTENT_ADMIN_DB must be set}
+      Jwt__Secret: ${ADMIN_JWT_SECRET:?ADMIN_JWT_SECRET must be set}
+      Jwt__Issuer: content-admin-api
+      Jwt__Audience: content-admin
+      Setup__Enabled: ${ADMIN_SETUP_ENABLED:-false}
+      Setup__Token: ${ADMIN_SETUP_TOKEN:-}
+      Cors__AllowedOrigins: ${CONTENT_ADMIN_ALLOWED_ORIGINS:-}
+    ports:
+      - "127.0.0.1:5083:5083"
+
+  notes-api:
+    build: ./notes-api
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:-Production}
+      ASPNETCORE_URLS: http://+:5081
+      NotesApi__ConnectionString: ${NOTES_API_DB:?NOTES_API_DB must be set}
+      NotesApi__JwtSecret: ${NOTES_JWT_SECRET:?NOTES_JWT_SECRET must be set}
+      NotesApi__JwtIssuer: bible-timeline-notes
+      NotesApi__JwtAudience: bible-timeline-web
+      NotesApi__AccessTokenExpiryMinutes: 15
+      NotesApi__RefreshTokenExpiryDays: 7
+      NotesApi__GoogleClientId: ${GOOGLE_CLIENT_ID:-}
+      NotesApi__FacebookAppId: ${FACEBOOK_APP_ID:-}
+      NotesApi__FacebookAppSecret: ${FACEBOOK_APP_SECRET:-}
+      NotesApi__TwitterClientId: ${TWITTER_CLIENT_ID:-}
+      NotesApi__TwitterClientSecret: ${TWITTER_CLIENT_SECRET:-}
+      NotesApi__FrontendBaseUrl: ${FRONTEND_BASE_URL:?FRONTEND_BASE_URL must be set}
+    expose:
+      - "5081"

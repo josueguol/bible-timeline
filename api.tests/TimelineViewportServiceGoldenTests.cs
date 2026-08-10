@@ -18,8 +18,9 @@ namespace BibleTimeline.Api.Tests;
 /// </summary>
 public class TimelineViewportServiceGoldenTests : IDisposable
 {
-    private const string BaseConnStr =
-        "Host=localhost;Port=5432;Username=postgres;Password=postgres;Database=postgres";
+    private static string BaseConnStr =>
+        Environment.GetEnvironmentVariable("BIBLE_TIMELINE_TEST_DB")
+        ?? "Host=localhost;Port=5432;Username=postgres;Password=postgres;Database=postgres";
 
     private readonly string _schemaName = $"test_{Guid.NewGuid():N}";
     private readonly TimelineViewportService _service;
