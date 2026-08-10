@@ -117,7 +117,7 @@ export class EventCard {
         `vertical-align:middle;">${childCount} sub-eventos</span>`
       : "";
 
-    const midSeq = Math.round((ev.startSequence + ev.endSequence) / 2);
+    const startSeq = ev.startSequence;
     const jumpHtml = this.onJumpTo
       ? `<button data-jump
            style="display:inline-flex;align-items:center;gap:6px;margin-top:16px;padding:8px 16px;
@@ -153,7 +153,7 @@ export class EventCard {
     this.el.querySelector("[data-close]")?.addEventListener("click", () => this.close());
     this.el.querySelector("[data-jump]")?.addEventListener("click", () => {
       this.close();
-      this.onJumpTo?.(midSeq);
+      this.onJumpTo?.(startSeq);
     });
   }
 }

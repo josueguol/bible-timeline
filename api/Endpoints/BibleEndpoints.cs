@@ -25,6 +25,8 @@ public static class BibleEndpoints
              string? toRef,
              string? manifestId,
              int? limit,
+             bool? includeStrong,
+             string? strongLang,
              BibleReadingService service) =>
         {
             var codes = (versions ?? string.Empty)
@@ -44,7 +46,21 @@ public static class BibleEndpoints
                 });
             }
 
-            var response = service.GetRange(codes, fromSequence, toSequence, fromRef, toRef, manifestId, limit);
+            if (!StrongService.TryNormalizeDefinitionLanguage(strongLang, out var definitionLanguage))
+            {
+                return Results.BadRequest(new { error = "strongLang must be es or en" });
+            }
+
+            var response = service.GetRange(
+                codes,
+                fromSequence,
+                toSequence,
+                fromRef,
+                toRef,
+                manifestId,
+                limit,
+                includeStrong is true,
+                definitionLanguage);
             return Results.Ok(response);
         })
         .WithName("GetVersesRange")

@@ -80,3 +80,7 @@ ehthumbs.db
 logs/
 tmp/
 temp/
+
+# SEC
+hash.txt
+internals.md

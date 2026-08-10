@@ -12,6 +12,8 @@ import { Topbar } from "@ui/topbar.ts";
 import { SearchPalette } from "@ui/search-palette.ts";
 import { EventCard } from "@ui/event-card.ts";
 import { Ads } from "@ui/ads.ts";
+import { handleTwitterCallback } from "@ui/auth-modal.ts";
+import { restoreAuthSession } from "@api/notes.ts";
 import "./styles/tokens.css";
 
 // ── Service worker ────────────────────────────────────────────────────────────
@@ -26,6 +28,8 @@ registerSW({
 // Every DOM overlay reads CSS variables (--color-*) during its first render, so
 // the tokens have to be on the root before any component mounts. The store also
 // emits on theme changes; we re-apply in the subscriber below.
+handleTwitterCallback(); // consume #notes_at=...&notes_rt=... from Twitter redirect
+void restoreAuthSession(); // silently rehydrate authStore from stored refresh token
 applyThemeToRoot(store.getState().theme);
 
 let appliedTheme = store.getState().theme;
@@ -77,7 +81,10 @@ async function bootstrap(): Promise<void> {
 
   // mount
   canvas.mount(app);
+  floatCards.onStaticCardsLoaded = (cards) => minimap.setFloatCards(cards);
   floatCards.mount(app);
+  window.addEventListener("note-saved", () => floatCards.reloadUserNotes());
+  window.addEventListener("note-deleted", () => floatCards.reloadUserNotes());
   ads.mount(app);                           // bottom strip (z-8, below cards)
   app.appendChild(ads.makeFloatAdCard());   // float-zone card (z-9, right side)
   eventCards.mount(app);

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "note-create-request",
+  "title": "NoteCreateRequest",
+  "type": "object",
+  "required": ["verseRef", "content"],
+  "additionalProperties": false,
+  "properties": {
+    "verseRef": {
+      "type": "string",
+      "pattern": "^[A-Z1-9]{2,6}\\.[0-9]{1,3}\\.[0-9]{1,3}$",
+      "description": "Canonical verse ref matching timeline_verse_order.ref (e.g. GEN.1.1)"
+    },
+    "content": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 10000,
+      "description": "Markdown content. Social embed codes (iframe from trusted domains) allowed."
+    }
+  }
+}

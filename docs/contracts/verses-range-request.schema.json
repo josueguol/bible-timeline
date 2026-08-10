@@ -14,7 +14,9 @@
     "fromSequence": { "type": "integer", "minimum": 1 },
     "toSequence": { "type": "integer", "minimum": 1 },
     "manifestId": { "type": "string", "minLength": 1 },
-    "limit": { "type": "integer", "minimum": 1, "maximum": 1000 }
+    "limit": { "type": "integer", "minimum": 1, "maximum": 1000 },
+    "includeStrong": { "type": "boolean" },
+    "strongLang": { "type": "string", "enum": ["es", "en"] }
   },
   "additionalProperties": false,
   "allOf": [

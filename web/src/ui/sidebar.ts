@@ -1,7 +1,9 @@
 import { store, type FloatType } from "@store/app-store.ts";
+import { authStore } from "@store/auth-store.ts";
 import { fetchVersions } from "@api/bible.ts";
 import type { BibleVersion } from "@api/types.ts";
 import type { Ads } from "@ui/ads.ts";
+import { AuthModal, logout } from "@ui/auth-modal.ts";
 import { ERAS } from "../era-data.ts";
 
 /**
@@ -29,6 +31,7 @@ export class Sidebar {
   private hamburger!: HTMLButtonElement;
   private availableVersions: BibleVersion[] = [];
   private ads?: Ads;
+  private authModal: AuthModal | null = null;
 
   constructor() {
     this.el = document.createElement("aside");
@@ -53,6 +56,7 @@ export class Sidebar {
     this.buildPanel();
     store.subscribe((s) => this.syncFromStore(s));
     this.syncFromStore(store.getState());
+    authStore.subscribe(() => this.syncAuthSection());
     // Load available versions from API — populate version list when ready.
     fetchVersions().then((res) => {
       this.availableVersions = res.versions;
@@ -155,6 +159,7 @@ export class Sidebar {
     scroll.appendChild(this.sectionEra());
     if (this.ads) scroll.appendChild(this.ads.makeSidebarSlot());
     scroll.appendChild(this.sectionFloats());
+    scroll.appendChild(this.sectionAuth());
     scroll.appendChild(this.sectionBookmarks());
     scroll.appendChild(this.sectionKeyboardHints());
     this.panel.appendChild(scroll);
@@ -383,6 +388,66 @@ export class Sidebar {
     empty.style.cssText = "font-size:var(--text-xs);color:var(--color-text-mute);";
     s.appendChild(empty);
     return s;
+  }
+
+  private sectionAuth(): HTMLElement {
+    const s = this.wrapSection("Mi cuenta");
+    s.dataset.authSection = "1";
+    this.renderAuthContent(s);
+    return s;
+  }
+
+  private syncAuthSection(): void {
+    const s = this.panel.querySelector<HTMLElement>('[data-auth-section="1"]');
+    if (!s) return;
+    // Clear everything after the heading
+    const heading = s.firstElementChild;
+    while (s.lastElementChild && s.lastElementChild !== heading)
+      s.lastElementChild.remove();
+    this.renderAuthContent(s);
+  }
+
+  private renderAuthContent(s: HTMLElement): void {
+    const auth = authStore.getState();
+    if (auth.user) {
+      const row = document.createElement("div");
+      row.style.cssText =
+        "display:flex;align-items:center;gap:8px;flex-wrap:wrap;";
+
+      const email = document.createElement("span");
+      email.style.cssText =
+        "flex:1;font-size:var(--text-xs);color:var(--color-text-dim);" +
+        "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+      email.title = auth.user.email;
+      email.textContent = auth.user.email;
+
+      const logoutBtn = document.createElement("button");
+      logoutBtn.type = "button";
+      logoutBtn.textContent = "Salir";
+      logoutBtn.style.cssText =
+        "padding:3px 10px;font-size:10px;border-radius:var(--radius-pill);" +
+        "border:1px solid var(--color-border);background:transparent;" +
+        "color:var(--color-text-dim);cursor:pointer;";
+      logoutBtn.addEventListener("click", () => logout());
+
+      row.append(email, logoutBtn);
+      s.appendChild(row);
+    } else {
+      const loginBtn = document.createElement("button");
+      loginBtn.type = "button";
+      loginBtn.textContent = "Iniciar sesión para notas";
+      loginBtn.style.cssText =
+        "width:100%;padding:8px;font-size:var(--text-xs);font-weight:var(--font-semibold);" +
+        "border:none;border-radius:var(--radius-sm);" +
+        "background:oklch(0.72 0.20 50);color:oklch(0.14 0.015 260);" +
+        "cursor:pointer;text-align:center;letter-spacing:.01em;";
+      loginBtn.addEventListener("click", () => {
+        this.authModal?.el.remove();
+        this.authModal = new AuthModal();
+        this.authModal.open();
+      });
+      s.appendChild(loginBtn);
+    }
   }
 
   private sectionKeyboardHints(): HTMLElement {

@@ -29,6 +29,11 @@ public sealed class VerseRangeRowDto
     /// Keyed by version code (RV60, NTV, ...). Value is null when that version does not have that verse.
     /// </summary>
     public Dictionary<string, string?> Texts { get; init; } = new();
+
+    /// <summary>
+    /// Optional word-level segments keyed by version code. Present only when requested and available.
+    /// </summary>
+    public Dictionary<string, IReadOnlyList<VerseSegmentDto>>? Segments { get; set; }
 }
 
 public sealed class VerseRangeDto
@@ -45,6 +50,35 @@ public sealed class VersesRangeResponse
     public IReadOnlyList<string> Versions { get; init; } = Array.Empty<string>();
     public VerseRangeDto Range { get; init; } = new();
     public IReadOnlyList<VerseRangeRowDto> Rows { get; init; } = Array.Empty<VerseRangeRowDto>();
+    public Dictionary<string, StrongEntryDto>? Lexicon { get; init; }
+}
+
+public sealed class VerseSegmentStrongDto
+{
+    public string StrongNumber { get; init; } = string.Empty;
+    public string StrongRaw { get; init; } = string.Empty;
+}
+
+public sealed class VerseSegmentDto
+{
+    public int Position { get; init; }
+    public string Text { get; init; } = string.Empty;
+    public IReadOnlyList<VerseSegmentStrongDto> Strongs { get; init; } = Array.Empty<VerseSegmentStrongDto>();
+}
+
+public sealed class StrongEntryDto
+{
+    public string StrongNumber { get; init; } = string.Empty;
+    public string Language { get; init; } = string.Empty;
+    public string Lemma { get; init; } = string.Empty;
+    public string? Transliteration { get; init; }
+    public string? Pronunciation { get; init; }
+    public string Definition { get; init; } = string.Empty;
+    public string? Derivation { get; init; }
+    public string? KjvDefinition { get; init; }
+    public string DefinitionLanguage { get; init; } = "en";
+    public string TranslationStatus { get; init; } = "source";
+    public string Source { get; init; } = string.Empty;
 }
 
 public sealed class SearchFocusDto

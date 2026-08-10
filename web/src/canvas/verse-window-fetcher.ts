@@ -1,5 +1,6 @@
 import { fetchVerses } from "@api/bible.ts";
-import type { VerseRangeRow } from "@api/types.ts";
+import type { StrongEntry, VerseRangeRow } from "@api/types.ts";
+import { store, type LangCode } from "@store/app-store.ts";
 
 /**
  * Debounced fetcher for the verse window that the user is currently looking
@@ -13,7 +14,11 @@ import type { VerseRangeRow } from "@api/types.ts";
 const DEBOUNCE_MS = 180;
 const WINDOW_PAD  = 10;        // extra verses fetched on each side
 
-export type VerseWindowCallback  = (rows: VerseRangeRow[], versions: string[]) => void;
+export type VerseWindowCallback  = (
+  rows: VerseRangeRow[],
+  versions: string[],
+  lexicon: Record<string, StrongEntry>,
+) => void;
 export type VerseWindowErrorCb   = (err: Error) => void;
 export type VerseLoadingCallback = (loading: boolean) => void;
 
@@ -34,15 +39,27 @@ export class VerseWindowFetcher {
 
     const from = Math.max(1, Math.floor(fromSeq) - WINDOW_PAD);
     const to   = Math.max(from, Math.ceil(toSeq) + WINDOW_PAD);
-    const key  = `${from}-${to}:${versionCodes.join(",")}`;
+    const includeStrong = shouldIncludeStrong(versionCodes);
+    const strongLang = store.getState().lang;
+    const key  = `${from}-${to}:${versionCodes.join(",")}:strong=${includeStrong}:${strongLang}`;
     if (key === this.lastKey) return;
 
     this.clearTimer();
     this.onLoading(true);
-    this.timer = setTimeout(() => this.doFetch(from, to, versionCodes, key), DEBOUNCE_MS);
+    this.timer = setTimeout(
+      () => this.doFetch(from, to, versionCodes, key, includeStrong, strongLang),
+      DEBOUNCE_MS,
+    );
   }
 
-  private doFetch(fromSeq: number, toSeq: number, versionCodes: string[], key: string): void {
+  private doFetch(
+    fromSeq: number,
+    toSeq: number,
+    versionCodes: string[],
+    key: string,
+    includeStrong: boolean,
+    strongLang: LangCode,
+  ): void {
     this.abort?.abort();
     this.abort = new AbortController();
     this.lastKey = key;
@@ -53,12 +70,14 @@ export class VerseWindowFetcher {
         fromSequence: fromSeq,
         toSequence:   toSeq,
         limit:        Math.min(250, toSeq - fromSeq + 1),
+        includeStrong,
+        strongLang,
       },
       this.abort.signal,
     )
       .then((res) => {
         this.onLoading(false);
-        this.onSuccess(res.rows, versionCodes);
+        this.onSuccess(res.rows, versionCodes, res.lexicon ?? {});
       })
       .catch((err: unknown) => {
         if ((err as Error).name === "AbortError") return;
@@ -83,4 +102,11 @@ export class VerseWindowFetcher {
   invalidate(): void {
     this.lastKey = "";
   }
+}
+
+function shouldIncludeStrong(versionCodes: string[]): boolean {
+  return versionCodes.some((code) => {
+    const upper = code.toUpperCase();
+    return upper.startsWith("HEB") || upper.startsWith("GRC");
+  });
 }

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "notes-list-response",
+  "title": "NotesListResponse",
+  "type": "object",
+  "required": ["notes"],
+  "additionalProperties": false,
+  "properties": {
+    "notes": {
+      "type": "array",
+      "items": { "$ref": "note-response" }
+    }
+  }
+}

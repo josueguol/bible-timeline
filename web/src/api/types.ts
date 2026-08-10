@@ -84,6 +84,31 @@ export interface VersionsListResponse {
 
 // ── Verses range ──────────────────────────────────────────────────────────────
 
+export interface StrongEntry {
+  strongNumber: string;
+  language: "hebrew" | "greek";
+  lemma: string;
+  transliteration: string | null;
+  pronunciation: string | null;
+  definition: string;
+  derivation: string | null;
+  kjvDefinition: string | null;
+  definitionLanguage: "es" | "en";
+  translationStatus: "source" | "machine" | "reviewed" | "fallback";
+  source: string;
+}
+
+export interface VerseSegmentStrong {
+  strongNumber: string;
+  strongRaw: string;
+}
+
+export interface VerseSegment {
+  position: number;
+  text: string;
+  strongs: VerseSegmentStrong[];
+}
+
 export interface VerseRangeRow {
   sequence: number;
   ref: string;
@@ -91,6 +116,7 @@ export interface VerseRangeRow {
   chapter: number;
   verse: number;
   texts: Record<string, string | null>;
+  segments?: Record<string, VerseSegment[]>;
 }
 
 export interface VerseRangeDto {
@@ -108,6 +134,8 @@ export interface VersesRangeRequest {
   toSequence?: number;
   manifestId?: string;
   limit?: number;
+  includeStrong?: boolean;
+  strongLang?: "es" | "en";
 }
 
 export interface VersesRangeResponse {
@@ -115,6 +143,7 @@ export interface VersesRangeResponse {
   versions: string[];
   range: VerseRangeDto;
   rows: VerseRangeRow[];
+  lexicon?: Record<string, StrongEntry>;
 }
 
 // ── Search ────────────────────────────────────────────────────────────────────

@@ -1,0 +1,16 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft.AspNetCore": "Information"
+    }
+  },
+  "NotesApi": {
+    "ConnectionString": "Host=localhost;Port=5432;Username=postgres;Password=CAMBIA_ESTO;Database=bible_timeline",
+    "JwtSecret": "GENERA_UN_SECRET_CON_openssl_rand_-base64_32",
+    "JwtIssuer": "bible-timeline-notes",
+    "JwtAudience": "bible-timeline-web",
+    "AccessTokenExpiryMinutes": 15,
+    "RefreshTokenExpiryDays": 7
+  }
+}

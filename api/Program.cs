@@ -16,12 +16,22 @@ builder.Services
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+var bibleTimelineOptions = builder.Configuration
+    .GetSection(BibleTimelineOptions.SectionName)
+    .Get<BibleTimelineOptions>() ?? new BibleTimelineOptions();
+if (!builder.Environment.IsDevelopment() &&
+    bibleTimelineOptions.ConnectionString.Contains("Password=postgres", StringComparison.OrdinalIgnoreCase))
+{
+    throw new InvalidOperationException("BibleTimeline:ConnectionString must not use the default postgres password in production.");
+}
+
 // ---- Infrastructure & services --------------------------------------------
 builder.Services.AddSingleton<NpgsqlConnectionFactory>();
 builder.Services.AddSingleton<TimelineViewportService>();
 builder.Services.AddSingleton<BibleReadingService>();
 builder.Services.AddSingleton<SearchService>();
 builder.Services.AddSingleton<EventDetailService>();
+builder.Services.AddSingleton<StrongService>();
 
 // ---- JSON ------------------------------------------------------------------
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -66,6 +76,7 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
 app.MapTimelineEndpoints();
 app.MapBibleEndpoints();
 app.MapSearchEndpoints();
+app.MapStrongEndpoints();
 
 app.Run();
 

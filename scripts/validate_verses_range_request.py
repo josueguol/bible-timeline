@@ -16,6 +16,8 @@ ALLOWED = {
     "toSequence",
     "manifestId",
     "limit",
+    "includeStrong",
+    "strongLang",
 }
 
 
@@ -88,6 +90,14 @@ def validate_payload(payload: object) -> list[str]:
     limit = payload.get("limit")
     if limit is not None and (not isinstance(limit, int) or not 1 <= limit <= 1000):
         errors.append("limit must be an integer in 1..1000 when provided")
+
+    include_strong = payload.get("includeStrong")
+    if include_strong is not None and not isinstance(include_strong, bool):
+        errors.append("includeStrong must be boolean when provided")
+
+    strong_lang = payload.get("strongLang")
+    if strong_lang is not None and strong_lang not in {"es", "en"}:
+        errors.append("strongLang must be es or en when provided")
 
     return errors
 

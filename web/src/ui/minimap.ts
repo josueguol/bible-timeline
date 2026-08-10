@@ -1,7 +1,7 @@
 import { store } from "@store/app-store.ts";
 import { ERAS } from "../era-data.ts";
 import { subscribeCameraUpdate, type CameraSnapshot } from "../camera.ts";
-import { FLOATS } from "../data/floats.ts";
+import type { FloatCard } from "../data/floats.ts";
 
 /**
  * Bottom-centered minimap with era bands, float-card dots, and a draggable
@@ -25,6 +25,7 @@ export class Minimap {
   private dragging = false;
 
   private jumpTo?: (seq: number) => void;
+  private floatDots: readonly FloatCard[] = [];
 
   constructor() {
     this.el = document.createElement("div");
@@ -52,6 +53,11 @@ export class Minimap {
 
   setJumpTo(fn: (seq: number) => void): void {
     this.jumpTo = fn;
+  }
+
+  setFloatCards(cards: readonly FloatCard[]): void {
+    this.floatDots = cards;
+    this.redraw();
   }
 
   destroy(): void {
@@ -140,7 +146,7 @@ export class Minimap {
     }
 
     // Float-card dots (small markers)
-    for (const f of FLOATS) {
+    for (const f of this.floatDots) {
       const x = ((f.sequence - 1) / TOTAL) * w;
       ctx.fillStyle = "oklch(1 0 0 / 0.55)";
       ctx.beginPath();
