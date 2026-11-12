@@ -1,0 +1,49 @@
+{
+  auto_https off
+  admin off
+}
+
+(block_internal) {
+  @internal path /internal/* /metrics /swagger /swagger/*
+  respond @internal 404
+}
+
+(security_headers) {
+  header {
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    -Server
+  }
+}
+
+# Desarrollo: no requiere DNS ni cambios al archivo hosts.
+:80 {
+  import block_internal
+  import security_headers
+  encode gzip zstd
+
+  handle /health {
+    reverse_proxy api:5080
+  }
+  handle /api/* {
+    reverse_proxy api:5080
+  }
+  handle_path /notes-api/* {
+    reverse_proxy notes-api:5081
+  }
+  handle_path /content-api/* {
+    reverse_proxy content-api:5082
+  }
+  handle {
+    reverse_proxy web:80
+  }
+}
+
+:81 {
+  import block_internal
+  import security_headers
+  encode gzip zstd
+  reverse_proxy admin:80
+}

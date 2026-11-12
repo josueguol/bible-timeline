@@ -1,0 +1,77 @@
+{
+  auto_https off
+  admin off
+}
+
+(block_internal) {
+  @internal path /internal/* /metrics /swagger /swagger/*
+  respond @internal 404
+}
+
+(security_headers) {
+  header {
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    -Server
+  }
+}
+
+# Producción: el proxy central termina TLS y conserva la cabecera Host.
+http://{$PUBLIC_WEB_HOST} {
+  import block_internal
+  import security_headers
+  encode gzip zstd
+
+  handle /health {
+    reverse_proxy api:5080
+  }
+  handle /api/* {
+    reverse_proxy api:5080
+  }
+  handle_path /notes-api/* {
+    reverse_proxy notes-api:5081
+  }
+  handle_path /content-api/* {
+    reverse_proxy content-api:5082
+  }
+  handle {
+    reverse_proxy web:80
+  }
+}
+
+http://{$API_HOST} {
+  import block_internal
+  import security_headers
+  encode gzip zstd
+  reverse_proxy api:5080
+}
+
+http://{$NOTES_API_HOST} {
+  import block_internal
+  import security_headers
+  encode gzip zstd
+  reverse_proxy notes-api:5081
+}
+
+http://{$CONTENT_API_HOST} {
+  import block_internal
+  import security_headers
+  encode gzip zstd
+  reverse_proxy content-api:5082
+}
+
+http://{$ADMIN_WEB_HOST} {
+  import block_internal
+  import security_headers
+  encode gzip zstd
+  reverse_proxy admin:80
+}
+
+http://{$ADMIN_API_HOST} {
+  import block_internal
+  import security_headers
+  encode gzip zstd
+  reverse_proxy content-admin-api:5083
+}

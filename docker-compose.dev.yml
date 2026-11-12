@@ -1,0 +1,4 @@
+services:
+  gateway:
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${ADMIN_GATEWAY_PORT:?ADMIN_GATEWAY_PORT must be set}:81"

@@ -1,53 +1,44 @@
 services:
-
-  web:
-    build: ./web
+  postgres:
+    image: postgres:16-alpine
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    ports:
-      - "127.0.0.1:5173:80"
-
-  content-api:
-    build: ./content-api
-    restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     environment:
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:-Production}
-      ASPNETCORE_URLS: http://+:5082
-      ConnectionStrings__Default: ${CONTENT_API_DB:?CONTENT_API_DB must be set}
-      Cors__AllowedOrigins: ${CONTENT_API_ALLOWED_ORIGINS:-}
-    expose:
-      - "5082"
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      SEED_DEVELOPMENT_ADMIN: ${SEED_DEVELOPMENT_ADMIN:-false}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init/10-bootstrap.sh:/docker-entrypoint-initdb.d/10-bootstrap.sh:ro
+      - ./resources/sql:/bootstrap:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 5s
+    networks: [bible-timeline]
 
-  content-admin-api:
-    build: ./content-admin-api
+  api:
+    build: ./api
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     environment:
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:-Production}
-      ASPNETCORE_URLS: http://+:5083
-      ConnectionStrings__Default: ${CONTENT_ADMIN_DB:?CONTENT_ADMIN_DB must be set}
-      Jwt__Secret: ${ADMIN_JWT_SECRET:?ADMIN_JWT_SECRET must be set}
-      Jwt__Issuer: content-admin-api
-      Jwt__Audience: content-admin
-      Setup__Enabled: ${ADMIN_SETUP_ENABLED:-false}
-      Setup__Token: ${ADMIN_SETUP_TOKEN:-}
-      Cors__AllowedOrigins: ${CONTENT_ADMIN_ALLOWED_ORIGINS:-}
-    ports:
-      - "127.0.0.1:5083:5083"
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:?ASPNETCORE_ENV must be set}
+      ASPNETCORE_URLS: http://+:5080
+      BibleTimeline__ConnectionString: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose: ["5080"]
+    networks: [bible-timeline]
 
   notes-api:
     build: ./notes-api
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     environment:
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:-Production}
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:?ASPNETCORE_ENV must be set}
       ASPNETCORE_URLS: http://+:5081
-      NotesApi__ConnectionString: ${NOTES_API_DB:?NOTES_API_DB must be set}
+      NotesApi__ConnectionString: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       NotesApi__JwtSecret: ${NOTES_JWT_SECRET:?NOTES_JWT_SECRET must be set}
       NotesApi__JwtIssuer: bible-timeline-notes
       NotesApi__JwtAudience: bible-timeline-web
@@ -59,5 +50,80 @@ services:
       NotesApi__TwitterClientId: ${TWITTER_CLIENT_ID:-}
       NotesApi__TwitterClientSecret: ${TWITTER_CLIENT_SECRET:-}
       NotesApi__FrontendBaseUrl: ${FRONTEND_BASE_URL:?FRONTEND_BASE_URL must be set}
-    expose:
-      - "5081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose: ["5081"]
+    networks: [bible-timeline]
+
+  content-api:
+    build: ./content-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:?ASPNETCORE_ENV must be set}
+      ASPNETCORE_URLS: http://+:5082
+      ConnectionStrings__Default: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Cors__AllowedOrigins: ${CONTENT_API_ALLOWED_ORIGINS:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose: ["5082"]
+    networks: [bible-timeline]
+
+  content-admin-api:
+    build: ./content-admin-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:?ASPNETCORE_ENV must be set}
+      ASPNETCORE_URLS: http://+:5083
+      ConnectionStrings__Default: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Jwt__Secret: ${ADMIN_JWT_SECRET:?ADMIN_JWT_SECRET must be set}
+      Jwt__Issuer: content-admin-api
+      Jwt__Audience: content-admin
+      Setup__Enabled: ${ADMIN_SETUP_ENABLED:-false}
+      Setup__Token: ${ADMIN_SETUP_TOKEN:-}
+      Cors__AllowedOrigins: ${CONTENT_ADMIN_ALLOWED_ORIGINS:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose: ["5083"]
+    networks: [bible-timeline]
+
+  web:
+    build: ./web
+    restart: unless-stopped
+    depends_on: [api, notes-api, content-api]
+    expose: ["80"]
+    networks: [bible-timeline]
+
+  admin:
+    build: ./admin
+    restart: unless-stopped
+    depends_on: [content-admin-api]
+    expose: ["80"]
+    networks: [bible-timeline]
+
+  gateway:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      CADDY_CONFIG: ${CADDY_CONFIG:?CADDY_CONFIG must be set}
+      PUBLIC_WEB_HOST: ${PUBLIC_WEB_HOST:?PUBLIC_WEB_HOST must be set}
+      API_HOST: ${API_HOST:?API_HOST must be set}
+      NOTES_API_HOST: ${NOTES_API_HOST:?NOTES_API_HOST must be set}
+      CONTENT_API_HOST: ${CONTENT_API_HOST:?CONTENT_API_HOST must be set}
+      ADMIN_WEB_HOST: ${ADMIN_WEB_HOST:?ADMIN_WEB_HOST must be set}
+      ADMIN_API_HOST: ${ADMIN_API_HOST:?ADMIN_API_HOST must be set}
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${GATEWAY_PORT:?GATEWAY_PORT must be set}:80"
+    volumes:
+      - ./infra/caddy/Caddyfile.${CADDY_CONFIG}:/etc/caddy/Caddyfile:ro
+    depends_on: [web, admin, api, notes-api, content-api, content-admin-api]
+    networks: [bible-timeline]
+
+networks:
+  bible-timeline:
+    driver: bridge
+
+volumes:
+  postgres-data:

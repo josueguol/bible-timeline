@@ -25,6 +25,85 @@ El script prepara PostgreSQL, aplica schemas/seeds faltantes, compila .NET + fro
 
 Si no tienes `psql` instalado localmente, el script usa automáticamente `psql` dentro del contenedor PostgreSQL detectado, por defecto `local-dev-postgres`.
 
+### Entornos Docker en Windows
+
+Los scripts PowerShell levantan un stack completo y aislado: PostgreSQL, API principal,
+servicios de contenido/notas, web, admin y un gateway Caddy. PostgreSQL y las APIs no
+publican puertos al host; solo se expone el gateway en `127.0.0.1`.
+
+```powershell
+# Desarrollo/integración: crea .env.dev desde la plantilla en el primer arranque.
+.\start-dev.ps1
+# Web: http://localhost:7410
+# Admin: http://localhost:7411
+
+# Detener desarrollo y preservar los datos PostgreSQL.
+.\stop-dev.ps1
+
+# Producción: copiar la plantilla, reemplazar todos los secretos y revisar los dominios.
+Copy-Item .env.production.example .env.prod
+notepad .env.prod
+.\start-prod.ps1
+
+# Detener producción y preservar los datos PostgreSQL.
+.\stop-prod.ps1
+```
+
+`-RemoveData` es deliberadamente opcional y borra únicamente el volumen PostgreSQL del
+entorno indicado:
+
+```powershell
+.\stop-dev.ps1 -RemoveData
+```
+
+Los proyectos Compose se llaman `bible-timeline-dev` y `bible-timeline-prod`, por lo que
+detener uno no afecta IODA, Firecrawl ni el otro entorno. Sus únicos puertos de host son
+`127.0.0.1:7410` y `127.0.0.1:7411` (dev), y `127.0.0.1:7310` (prod); el script comprueba
+que los puertos estén disponibles antes de crear el stack.
+
+Producción no toma los puertos 80/443. El túnel Cloudflare compartido `ioda-admin` termina TLS
+en Cloudflare y debe enviar cada hostname al gateway local `http://localhost:7310`, preservando
+la cabecera `Host`:
+
+```yaml
+- hostname: chrono.llamado.de
+  service: http://localhost:7310
+- hostname: chrono-api.pixcan.com
+  service: http://localhost:7310
+- hostname: chrono-notes-api.pixcan.com
+  service: http://localhost:7310
+- hostname: chrono-content-api.pixcan.com
+  service: http://localhost:7310
+- hostname: chrono-admin.pixcan.com
+  service: http://localhost:7310
+- hostname: chrono-admin-api.pixcan.com
+  service: http://localhost:7310
+```
+
+Estas reglas pertenecen al `ingress` de `C:\\Users\\Looper\\.cloudflared\\config.yml` y se
+deben colocar antes de la regla final `http_status:404`. Cada hostname requiere además un CNAME
+proxied al UUID del túnel (`b7c4fbb1-7fd8-4291-a02a-ff1807de1a29.cfargotunnel.com`) creado en
+una zona activa de la **misma cuenta Cloudflare** que posee `ioda-admin`. Un CNAME equivalente
+en un proveedor DNS externo no puede enrutar tráfico hacia este túnel. En planes Free/Pro, esto
+requiere que Cloudflare sea el DNS autoritativo: se cambian los nameservers en el registrador,
+pero no hace falta transferir el registro del dominio. Cloudflare gestiona los certificados
+Universal SSL (la primera emisión puede tardar unos minutos); `start-prod.ps1` y `stop-prod.ps1`
+no arrancan, paran ni reinician el túnel compartido de IODA. Los nombres se pueden cambiar en
+`.env.prod` sin editar Compose, pero requieren sus correspondientes rutas DNS e `ingress`.
+
+El entorno de producción no crea el usuario admin de desarrollo. Para provisionar el primer
+administrador, activa temporalmente `ADMIN_SETUP_ENABLED=true`, define un
+`ADMIN_SETUP_TOKEN` aleatorio en `.env.prod`, reinicia `start-prod.ps1` y llama una vez:
+
+```powershell
+Invoke-RestMethod -Method Post https://chrono-admin-api.pixcan.com/auth/setup `
+  -Headers @{ "X-Setup-Token" = "<ADMIN_SETUP_TOKEN>" } `
+  -ContentType "application/json" `
+  -Body '{"email":"admin@example.com","password":"una-contraseña-de-12-o-más-caracteres"}'
+```
+
+Después vuelve a poner `ADMIN_SETUP_ENABLED=false` y ejecuta `start-prod.ps1` otra vez.
+
 ---
 
 ## 1. Base de datos
